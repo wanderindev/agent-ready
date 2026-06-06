@@ -58,14 +58,21 @@ Skills then appear namespaced as `/agent-ready:<skill>`.
 | `repo-bootstrap` | Setup | Idempotently configures git branch protection, a CI workflow, issue labels, and issue templates on the target repo (via `gh`/`git`). |
 | `methodology-install` | Setup | Copies the methodology docs into the target's own tree, walks the worked-example placeholders for domain-appropriate replacements, and resets the cross-session register. |
 | `area-audit` | Audit | Scaffolds the 10-slot area-audit prompt for one area, gating on the per-area fills; enforces the closing gates when a session reports back. |
-| `fix-issue` | Resolve | Drives one or more GitHub issues to agent-written PRs via a brief-writing + implementation agent pipeline, with non-skippable verification gates. |
+| `plan-epic` | Resolve | Clusters the open backlog high→low by severity into a workable epic — proposes 2–3 candidates, creates the chosen one in GitHub. |
+| `fix-epic` | Resolve | Executes an epic in **pair-mode** — works the whole cluster on one coherent branch/PR, in dependency order, closing the issues and the epic. |
+| `fix-issue` | Resolve | Drives one or more GitHub issues to agent-written PRs via a brief-writing + implementation agent pipeline, with non-skippable verification gates (**autonomous**). |
 | `update-pr` | Resolve | Brings an open PR up to date with `main` and resolves conflicts in an isolated worktree. |
+
+The two **Resolve** paths are deliberate complements: `fix-issue` is autonomous
+dispatch for the agent-tractable subset; `plan-epic` + `fix-epic` is the
+clustered pair-mode path the pilot's retrospective found more productive and
+lower-friction for a solo reviewer.
 
 ## How it fits together
 
 ```
-repo-bootstrap ──► methodology-install ──► area-audit (×N) ──► fix-issue / pair sessions
-   (infra)            (docs)                  (backlog)            (resolve backlog)
+repo-bootstrap ──► methodology-install ──► area-audit (×N) ──┬─► plan-epic ─► fix-epic   (pair-mode clusters)
+   (infra)            (docs)                  (backlog)       └─► fix-issue              (autonomous subset)
 ```
 
 Plugins are read-only once installed; they cannot push GitHub state or write
@@ -93,10 +100,12 @@ agent-ready/
 ## Roadmap
 
 - [x] Scaffold: marketplace + plugin manifests, folder skeleton, license
+- [x] Specify the `plan-epic` + `fix-epic` pair-mode cluster skills (scaffolds)
 - [ ] Lift & sanitize the methodology docs and the `area-audit` / `fix-issue` /
       `update-pr` skills from the pilot project (resolve worked-example placeholders)
 - [ ] Build `repo-bootstrap`
 - [ ] Build `methodology-install`
+- [ ] Build `plan-epic` and `fix-epic`
 - [ ] Validate the whole pipeline on a second codebase
 
 ## Status & honesty

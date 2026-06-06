@@ -11,7 +11,9 @@ setup skills copy into a target repository.
 | [`repo-bootstrap`](skills/repo-bootstrap/) | scaffold | Configure branch protection, CI, labels, issue templates on a target repo. |
 | [`methodology-install`](skills/methodology-install/) | scaffold | Copy methodology docs into a target, sanitize worked-example placeholders, init the register. |
 | [`area-audit`](skills/area-audit/) | to lift | Scaffold + gate the 10-slot area-audit prompt. |
-| [`fix-issue`](skills/fix-issue/) | to lift | Drive issues to agent-written PRs through a gated brief→implementation pipeline. |
+| [`plan-epic`](skills/plan-epic/) | scaffold | Cluster the open backlog by severity into a workable epic; propose 2–3, create the chosen one. |
+| [`fix-epic`](skills/fix-epic/) | scaffold | Execute an epic in pair-mode — one coherent branch/PR for the whole cluster. |
+| [`fix-issue`](skills/fix-issue/) | to lift | Drive issues to agent-written PRs through a gated brief→implementation pipeline (autonomous). |
 | [`update-pr`](skills/update-pr/) | to lift | Bring an open PR up to date with `main` in an isolated worktree. |
 
 ## Assets

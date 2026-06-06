@@ -101,8 +101,8 @@ agent-ready/
 
 - [x] Scaffold: marketplace + plugin manifests, folder skeleton, license
 - [x] Specify the `plan-epic` + `fix-epic` pair-mode cluster skills (scaffolds)
-- [ ] Lift & sanitize the methodology docs and the `area-audit` / `fix-issue` /
-      `update-pr` skills from the pilot project (resolve worked-example placeholders)
+- [x] Lift & sanitize the methodology docs, the `area-audit` / `fix-issue` /
+      `update-pr` skills, issue templates, and the case study from the pilot
 - [ ] Build `repo-bootstrap`
 - [ ] Build `methodology-install`
 - [ ] Build `plan-epic` and `fix-epic`

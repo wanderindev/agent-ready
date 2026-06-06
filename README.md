@@ -2,9 +2,11 @@
 
 **A methodology for making an existing codebase safe and clear enough to hand work to AI agents — then resolving the backlog with autonomous agents on the tractable subset and human pairing on the rest.**
 
-> Status: **v0.1 — scaffolding.** The structure and manifests are in place; the
-> skills and bundled assets are being lifted in from the pilot project that
-> produced the methodology. See [Roadmap](#roadmap).
+> Status: **v0.1 — all seven skills built; pending live validation.** The
+> manifests, methodology docs, case study, and all skills are in place. The whole
+> pipeline has not yet been run end-to-end on a second codebase — that's the next
+> milestone, and the methodology stays v1 (calibrated to one codebase) until it
+> is. See [Roadmap](#roadmap).
 
 This repository is a [Claude Code](https://claude.com/claude-code) **plugin
 marketplace**. Installing the plugin gives you a set of skills that walk a
@@ -105,7 +107,7 @@ agent-ready/
       `update-pr` skills, issue templates, and the case study from the pilot
 - [x] Build `repo-bootstrap` (idempotent labels + templates + CI stub + branch protection)
 - [x] Build `methodology-install` (copy docs, rewrite dangling cross-links, init prompts dir + empty register)
-- [ ] Build `plan-epic` and `fix-epic`
+- [x] Build `plan-epic` and `fix-epic` (severity-ranked clustering + pair-mode epic execution)
 - [ ] Validate the whole pipeline on a second codebase
 
 ## Status & honesty

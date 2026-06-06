@@ -1,14 +1,18 @@
-# CI workflow stubs (to build)
+# CI workflow stubs
 
-Placeholder. `repo-bootstrap` writes a stack-appropriate CI workflow into the
-target's `.github/workflows/`. Planned stubs:
+`repo-bootstrap` copies one of these into a target's `.github/workflows/ci.yml`
+and adapts it to the project (language version, working directory, commands).
 
-- `python-pytest-ruff.yml` — gitleaks secret scan + ruff lint/format + pytest.
-  Modeled on the pilot's `ci.yml`.
-- `node.yml` — secret scan + lint + build/test for Node/Vite projects.
-- `generic.yml` — secret scan only, as a minimal floor for any repo.
+| Stub | For | Required-check contexts (job `name:` values) |
+|---|---|---|
+| `python-pytest-ruff.yml` | Python projects | `Secret scan`, `Test` |
+| `node.yml` | Node / Vite projects | `Secret scan`, `Test` |
+| `generic.yml` | any stack (minimal floor) | `Secret scan` |
 
-**Load-bearing constraint:** each stub's job `name:` becomes the
-branch-protection required-check key. Pick it deliberately; `repo-bootstrap`
-must reference the same name when applying protection, and it must never be
-renamed afterward.
+All three include a gitleaks **secret scan** as a required check. The Python and
+Node stubs add a `Test` job (lint + format/build + tests).
+
+**Load-bearing constraint:** each job's `name:` becomes the branch-protection
+required-check key. `repo-bootstrap`'s `protect-branch.sh` must be passed the
+same names, and they must never be renamed afterward (renaming strands the
+required check forever). Change steps, not names.

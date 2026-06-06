@@ -1,0 +1,77 @@
+# Agent Ready — CI stub: Python (pytest + ruff) + secret scan
+#
+# Required-check contexts this workflow exposes (used by repo-bootstrap's branch
+# protection step — these are the job `name:` values, NOT the job ids):
+#   - "Secret scan"
+#   - "Test"
+#
+# IMPORTANT: a job's `name:` IS its branch-protection required-check key.
+# Renaming a job strands the protected branch's required check forever. Change
+# steps, never the name. (See the case study's ci-job-name lesson.)
+#
+# Adjust the marked spots for your project (Python version, working directory,
+# dependency install, test/lint paths), then commit. repo-bootstrap will offer
+# to do the first commit for you before protection is turned on.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION=8.21.2
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+      # Scans the working tree only (--no-git). If your history contains
+      # now-rotated secrets, tree-only scanning validates each push against its
+      # post-merge state, which is what matters for new leaks.
+      - name: Scan working tree
+        run: gitleaks detect --source . --no-git --redact --verbose --no-banner
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    # If your code lives in a subdirectory (e.g. backend/), set it here:
+    # defaults:
+    #   run:
+    #     working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # <-- adjust to your project
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e ".[dev]" 2>/dev/null || pip install -e . 2>/dev/null || true; fi
+          pip install ruff pytest
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (ruff)
+        run: ruff format --check .
+
+      - name: Test (pytest)
+        run: pytest -q

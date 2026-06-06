@@ -8,7 +8,7 @@ setup skills copy into a target repository.
 
 | Skill | Status | Purpose |
 |---|---|---|
-| [`repo-bootstrap`](skills/repo-bootstrap/) | scaffold | Configure branch protection, CI, labels, issue templates on a target repo. |
+| [`repo-bootstrap`](skills/repo-bootstrap/) | built | Configure branch protection, CI, labels, issue templates on a target repo. |
 | [`methodology-install`](skills/methodology-install/) | scaffold | Copy methodology docs into a target, sanitize worked-example placeholders, init the register. |
 | [`area-audit`](skills/area-audit/) | lifted | Scaffold + gate the 10-slot area-audit prompt. |
 | [`plan-epic`](skills/plan-epic/) | scaffold | Cluster the open backlog by severity into a workable epic; propose 2–3, create the chosen one. |
@@ -22,7 +22,7 @@ setup skills copy into a target repository.
 |---|---|---|
 | [`assets/github/labels.json`](assets/github/labels.json) | ready | The label set `repo-bootstrap` creates. |
 | `assets/github/ISSUE_TEMPLATE/` | ready | Issue templates copied into the target's `.github/`. |
-| `assets/ci/` | to build | Stack-specific CI workflow stubs. |
+| `assets/ci/` | ready | Stack-specific CI workflow stubs (python / node / generic). |
 | `assets/methodology/` | ready | The portable methodology docs `methodology-install` copies out. |
 
 Skills reference these via `${CLAUDE_PLUGIN_ROOT}/assets/...` so they resolve

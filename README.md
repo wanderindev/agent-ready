@@ -21,7 +21,7 @@ project through the full pipeline:
 It was extracted from a real audit-to-autonomy run on a deployed bilingual
 content-and-booking site, where the methodology took the project from a
 stalled, vibe-coded state to **138 issues filed and closed, 165 PRs merged,
-zero breakages of `main`**. That run is documented as the [case study](case-study/).
+zero breakages of `main`**. That run is documented as the [case study](case-study/README.md).
 
 ## Why this exists
 
@@ -37,7 +37,7 @@ The surprising lesson from the pilot was that the biggest win wasn't autonomy at
 all — it was **clarity**. A well-specified issue backlog cured the stop-start
 "blank page" problem that quietly kills side projects, and made every session
 productive from minute one. The full, honest account is in the
-[retrospective](case-study/).
+[retrospective](case-study/retrospective.md).
 
 ## Install
 
@@ -103,7 +103,7 @@ agent-ready/
 - [x] Specify the `plan-epic` + `fix-epic` pair-mode cluster skills (scaffolds)
 - [x] Lift & sanitize the methodology docs, the `area-audit` / `fix-issue` /
       `update-pr` skills, issue templates, and the case study from the pilot
-- [ ] Build `repo-bootstrap`
+- [x] Build `repo-bootstrap` (idempotent labels + templates + CI stub + branch protection)
 - [ ] Build `methodology-install`
 - [ ] Build `plan-epic` and `fix-epic`
 - [ ] Validate the whole pipeline on a second codebase

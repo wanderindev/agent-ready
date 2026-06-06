@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Agent-friendly criteria
+    url: ../blob/main/docs/methodology/agent-friendly-criteria.md
+    about: Read this before filing an Agent task or applying the agent-friendly label.
+  - name: Methodology overview
+    url: ../blob/main/docs/methodology/README.md
+    about: How labels, templates, and the agent-friendly axis fit together.

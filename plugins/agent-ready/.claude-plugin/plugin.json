@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "agent-ready",
+  "displayName": "Agent Ready",
+  "version": "0.1.0",
+  "description": "Audit-to-autonomy methodology toolkit: bootstrap a repo for agent work, install the methodology docs, scaffold area audits, and resolve issues autonomously or in pair-mode.",
+  "author": {
+    "name": "Javier Feliu"
+  },
+  "homepage": "https://github.com/wanderindev/agent-ready",
+  "repository": "https://github.com/wanderindev/agent-ready",
+  "license": "MIT",
+  "keywords": ["audit", "code-quality", "autonomous-agents", "methodology", "github-issues"]
+}

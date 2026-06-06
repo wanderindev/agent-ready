@@ -104,7 +104,7 @@ agent-ready/
 - [x] Lift & sanitize the methodology docs, the `area-audit` / `fix-issue` /
       `update-pr` skills, issue templates, and the case study from the pilot
 - [x] Build `repo-bootstrap` (idempotent labels + templates + CI stub + branch protection)
-- [ ] Build `methodology-install`
+- [x] Build `methodology-install` (copy docs, rewrite dangling cross-links, init prompts dir + empty register)
 - [ ] Build `plan-epic` and `fix-epic`
 - [ ] Validate the whole pipeline on a second codebase
 

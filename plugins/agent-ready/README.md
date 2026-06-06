@@ -9,7 +9,7 @@ setup skills copy into a target repository.
 | Skill | Status | Purpose |
 |---|---|---|
 | [`repo-bootstrap`](skills/repo-bootstrap/) | built | Configure branch protection, CI, labels, issue templates on a target repo. |
-| [`methodology-install`](skills/methodology-install/) | scaffold | Copy methodology docs into a target, sanitize worked-example placeholders, init the register. |
+| [`methodology-install`](skills/methodology-install/) | built | Copy methodology docs into a target, rewrite dangling cross-links, init the prompts dir + empty register. |
 | [`area-audit`](skills/area-audit/) | lifted | Scaffold + gate the 10-slot area-audit prompt. |
 | [`plan-epic`](skills/plan-epic/) | scaffold | Cluster the open backlog by severity into a workable epic; propose 2–3, create the chosen one. |
 | [`fix-epic`](skills/fix-epic/) | scaffold | Execute an epic in pair-mode — one coherent branch/PR for the whole cluster. |

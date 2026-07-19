@@ -6,10 +6,16 @@ installed into other projects.
 
 ## What this repo is
 
-- A marketplace (`.claude-plugin/marketplace.json` at the root) hosting one
-  plugin (`plugins/agent-ready/`).
-- The plugin bundles **skills** (the operational entry points) and **assets**
-  (templates the setup skills copy into a target repo).
+- A marketplace (`.claude-plugin/marketplace.json` at the root) hosting two
+  plugins: `plugins/agent-ready/` (the methodology) and
+  `plugins/agent-ready-guardrails/` (the safety baseline).
+- The `agent-ready` plugin bundles **skills** (the operational entry points) and
+  **assets** (templates the setup skills copy into a target repo).
+- The `agent-ready-guardrails` plugin bundles a deny/ask/allow **policy**, a
+  PreToolUse **guard hook**, and an idempotent **installer** — the floor the
+  methodology assumes is in place before agents touch a repo. It ships no
+  permission rules in `plugin.json` (plugins can't); the policy travels as a
+  JSON asset the installer merges, with the hook as a backstop.
 - A **case study** (`case-study/`) — the pilot retrospective and worked corpus
   the methodology was extracted from.
 

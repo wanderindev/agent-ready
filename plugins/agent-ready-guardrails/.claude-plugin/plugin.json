@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "agent-ready-guardrails",
+  "displayName": "Agent Ready Guardrails",
+  "version": "0.1.0",
+  "description": "A safe deny/ask/allow baseline for handing a repo to agents: destructive git/filesystem actions denied, production access gated behind explicit approval, secrets protected. Installs the policy and ships a PreToolUse hook that blocks the catastrophic subset immediately.",
+  "author": {
+    "name": "Javier Feliu"
+  },
+  "homepage": "https://github.com/wanderindev/agent-ready",
+  "repository": "https://github.com/wanderindev/agent-ready",
+  "license": "MIT",
+  "keywords": ["guardrails", "safety", "permissions", "hooks", "agent-ready"]
+}

@@ -47,11 +47,34 @@ productive from minute one. The full, honest account is in the
 # Add this repository as a marketplace
 /plugin marketplace add wanderindev/agent-ready
 
-# Install the plugin
+# Install the methodology plugin
 /plugin install agent-ready@agent-ready
+
+# Recommended: the safety baseline the methodology assumes is in place
+/plugin install agent-ready-guardrails@agent-ready
 ```
 
 Skills then appear namespaced as `/agent-ready:<skill>`.
+
+### Guardrails (install first)
+
+The methodology's skills assume a deny/ask/allow floor already exists in the
+repos you point agents at — no force-push, no push to `main`, no `pr merge`, no
+touching secrets. [`agent-ready-guardrails`](plugins/agent-ready-guardrails/) is
+where that floor comes from: a codebase-agnostic policy plus a PreToolUse guard
+that blocks the catastrophic subset the moment the plugin is enabled. Install it
+once per machine, then apply the policy:
+
+```bash
+plugins/agent-ready-guardrails/scripts/install-policy.sh   # idempotent; backs up first
+```
+
+It ships as a separate plugin because safety should not depend on running the
+full audit — you want the floor on every repo, audited or not. This mirrors a
+lesson from taking the methodology to a second codebase, where the guardrails
+were the piece most easily left behind. See the plugin's
+[README](plugins/agent-ready-guardrails/README.md) for the policy design and how
+to extend it for your stack.
 
 ## The skills
 
@@ -87,14 +110,19 @@ referenced at runtime via `${CLAUDE_PLUGIN_ROOT}`.
 
 ```
 agent-ready/
-├── .claude-plugin/marketplace.json     # makes this repo an installable marketplace
+├── .claude-plugin/marketplace.json     # makes this repo an installable marketplace (two plugins)
 ├── plugins/agent-ready/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/                         # the five skills above
+│   ├── skills/                         # the seven skills above
 │   └── assets/                         # templates the setup skills copy into a target
 │       ├── github/                     # labels.json + ISSUE_TEMPLATE/
 │       ├── ci/                         # stack-specific CI workflow stubs
 │       └── methodology/                # the portable methodology docs
+├── plugins/agent-ready-guardrails/     # the safety baseline (deny/ask/allow + PreToolUse guard)
+│   ├── .claude-plugin/plugin.json
+│   ├── policy/permissions.json         # the canonical deny/ask/allow policy
+│   ├── hooks/                          # guard.sh + hooks.json (catastrophic-subset backstop)
+│   └── scripts/install-policy.sh       # idempotent policy merge into a settings file
 ├── case-study/                         # the pilot retrospective + worked corpus
 └── LICENSE                             # MIT
 ```
@@ -108,6 +136,7 @@ agent-ready/
 - [x] Build `repo-bootstrap` (idempotent labels + templates + CI stub + branch protection)
 - [x] Build `methodology-install` (copy docs, rewrite dangling cross-links, init prompts dir + empty register)
 - [x] Build `plan-epic` and `fix-epic` (severity-ranked clustering + pair-mode epic execution)
+- [x] Add the `agent-ready-guardrails` plugin (deny/ask/allow baseline + PreToolUse guard + installer)
 - [ ] Validate the whole pipeline on a second codebase
 
 ## Status & honesty

@@ -85,8 +85,9 @@ to extend it for your stack.
 | `area-audit` | Audit | Scaffolds the 10-slot area-audit prompt for one area, gating on the per-area fills; enforces the closing gates when a session reports back. |
 | `plan-epic` | Resolve | Clusters the open backlog high→low by severity into a workable epic — proposes 2–3 candidates, creates the chosen one in GitHub. |
 | `fix-epic` | Resolve | Executes an epic in **pair-mode** — works the whole cluster on one coherent branch/PR, in dependency order, closing the issues and the epic. |
-| `fix-issue` | Resolve | Drives one or more GitHub issues to agent-written PRs via a brief-writing + implementation agent pipeline, with non-skippable verification gates (**autonomous**). |
+| `fix-issue` | Resolve | Drives one or more GitHub issues to agent-written PRs via a brief-writing + implementation agent pipeline, with non-skippable verification gates and an independent fresh-session diff review that confers readiness (**autonomous**). |
 | `update-pr` | Resolve | Brings an open PR up to date with `main` and resolves conflicts in an isolated worktree. |
+| `report` | Measure | Prints the self-computed methodology scorecard — backlog/clarity, autonomous quality (outcomes + fresh-review pass rate), safety, throughput. Read-only; joins a local git-untracked event log the loop emits with live `gh`/`git` queries. |
 
 The two **Resolve** paths are deliberate complements: `fix-issue` is autonomous
 dispatch for the agent-tractable subset; `plan-epic` + `fix-epic` is the
@@ -113,7 +114,7 @@ agent-ready/
 ├── .claude-plugin/marketplace.json     # makes this repo an installable marketplace (two plugins)
 ├── plugins/agent-ready/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/                         # the seven skills above
+│   ├── skills/                         # the eight skills above
 │   └── assets/                         # templates the setup skills copy into a target
 │       ├── github/                     # labels.json + ISSUE_TEMPLATE/
 │       ├── ci/                         # stack-specific CI workflow stubs
@@ -137,6 +138,8 @@ agent-ready/
 - [x] Build `methodology-install` (copy docs, rewrite dangling cross-links, init prompts dir + empty register)
 - [x] Build `plan-epic` and `fix-epic` (severity-ranked clustering + pair-mode epic execution)
 - [x] Add the `agent-ready-guardrails` plugin (deny/ask/allow baseline + PreToolUse guard + installer)
+- [x] Add fresh-session review to `fix-issue` (independent diff review confers PR readiness)
+- [x] Add the `report` skill (self-computing methodology scorecard from a local event log + live `gh`/`git`)
 - [ ] Validate the whole pipeline on a second codebase
 
 ## Status & honesty

@@ -89,5 +89,6 @@ If the answer is yes, build a gate. The two existing gates have already demonstr
 
 - [prompt-template.md](./prompt-template.md) and `../../skills/area-audit/SKILL.md` — the per-session entry points the conventions sit alongside.
 - [cross-session-register.md](./cross-session-register.md) — the register itself.
+- `../../skills/report/` — the resolve phase's *automatic* self-measurement (a local event log the loop emits + a scorecard that also derives from `gh`/`git`). It is the machine counterpart to this section's manual practices: where the register captures cross-session audit decisions by hand, the report captures resolve-loop effectiveness as a byproduct of running — the direct answer to §10's warning that retroactive recollection isn't reliable enough to measure the methodology.
 - [cross-cutting-checklist.md](./cross-cutting-checklist.md) — the second instance of the gate-not-guideline meta-principle; the checklist whose dispositions are double-enforced.
 - The case study's synthesis §9 (Artifact 5 deferred until a second codebase) and §10 (falsifiability) — the conceptual basis for both conventions.

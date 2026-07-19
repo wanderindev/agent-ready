@@ -54,7 +54,7 @@ Collect the issue ids and detect `--review` / `--no-review`. Resolve the review 
 One per surviving id, per `references/brief-agent-launch.md`. For a batch, launch them all in a single message (multiple Agent tool calls) so they run concurrently. They read the main checkout — no worktree.
 
 ### Step 3 — Collect and gate the briefs
-As briefs return: save each to the prompts directory (default `docs/agent-fixes/prompts/`) as `fix-issue-<N>.md` and add a one-line `INDEX.md` entry (prompt-preservation). Run gates 3 and 4. Hold and surface any issue that fails; let the rest proceed.
+As briefs return: save each to the prompts directory (default `docs/agent-fixes/prompts/`) as `fix-issue-<N>.md` and add a one-line `INDEX.md` entry (prompt-preservation). Run gates 3 and 4. Hold and surface any issue that fails (emit `brief_held`); let the rest proceed.
 
 ### Step 4 — Human review gate
 Per the resolved mode (gate 5). ON: present the brief(s) and verification findings (drift, canonical pattern, IN/OUT scope, counts, production-touch verdict); wait for approval. OFF: proceed directly with the gate-3-clean briefs.
@@ -64,10 +64,10 @@ For each cleared issue, launch via the Agent tool per `references/agent-launch.m
 - `subagent_type: "general-purpose"`, `isolation: "worktree"`, `run_in_background: true`
 - `prompt`: the orienting preamble with the **full brief content inlined** (the worktree is branched from `main` and may not contain the brief file).
 
-Each implementation agent opens its PR **as a draft** and reports back "believe-complete" or "blocked" — it no longer decides ready-vs-draft itself (gate 6 does). For a batch, dispatch the non-overlapping issues in parallel (single message, multiple Agent calls). For file-overlapping issues, either serialize them or dispatch with an explicit conflict warning. The skill then returns to the operator with the launch confirmations and ends the turn — completions notify automatically (do not poll).
+Each implementation agent opens its PR **as a draft** and reports back "believe-complete" or "blocked" — it no longer decides ready-vs-draft itself (gate 6 does). Emit `issue_dispatched` per dispatch. For a batch, dispatch the non-overlapping issues in parallel (single message, multiple Agent calls). For file-overlapping issues, either serialize them or dispatch with an explicit conflict warning. The skill then returns to the operator with the launch confirmations and ends the turn — completions notify automatically (do not poll).
 
 ### Step 6 — Fresh-session review (on each implementation agent's completion)
-When an implementation agent reports **believe-complete**, spawn a fresh-review agent for its PR and enforce the verdict per `references/fresh-review.md`:
+When an implementation agent reports **believe-complete**, spawn a fresh-review agent for its PR and enforce the verdict per `references/fresh-review.md` (emit `review_verdict` with the effective verdict):
 - **Effective PASS** → `gh pr ready <PR>`; post the `## Self-review` summary + any unaddressed `warn`s as a PR comment; proceed to step 7 recording the readiness.
 - **Effective FAIL** (including a fail-closed absent/unparseable verdict) → leave the PR a draft, post the findings as a PR comment, and surface to the operator; proceed to step 7 recording `review: FAIL`.
 
@@ -76,7 +76,7 @@ When an implementation agent reports **blocked**, it already opened a draft for 
 ### Step 7 — Report and instrument (after the review stage for each issue)
 As each issue settles (review passed, review failed, or blocked):
 - Summarize its PR (number, **the fresh-review verdict and resulting ready-vs-draft state**, what shipped, any flags surfaced).
-- **The ORCHESTRATOR appends the outcomes row, not the agent.** Append one row to a local-only, git-untracked outcomes log (default `docs/agent-fixes/agent-friendly-outcomes.md`) (`Agent attempted: yes`, the fresh-review verdict (`review: PASS`→ready / `review: FAIL`→draft / `blocked`), `Outcome: not-yet-attempted`; flip to `clean-merge` / `needs-revision` after the operator merges). This file is **git-untracked / local-only** (see `.gitignore`) — do NOT commit it and do NOT include it in any PR. It used to be appended by each implementation agent inside its own worktree, which made every concurrent agent PR conflict on this one file, forcing an `update-pr` + CI run per PR. Keeping it local and orchestrator-written removes that conflict class entirely (cost guardrail).
+- **The ORCHESTRATOR appends the outcomes row, not the agent.** Append one row to a local-only, git-untracked outcomes log (default `docs/agent-fixes/agent-friendly-outcomes.md`) (`Agent attempted: yes`, the fresh-review verdict (`review: PASS`→ready / `review: FAIL`→draft / `blocked`), `Outcome: not-yet-attempted`; flip to `clean-merge` / `needs-revision` after the operator merges). **Also emit `outcome_finalized`** (step 7 event) once the outcome is known — the machine-readable counterpart the `report` skill reads. This file is **git-untracked / local-only** (see `.gitignore`) — do NOT commit it and do NOT include it in any PR. It used to be appended by each implementation agent inside its own worktree, which made every concurrent agent PR conflict on this one file, forcing an `update-pr` + CI run per PR. Keeping it local and orchestrator-written removes that conflict class entirely (cost guardrail).
 - Remind the operator to review and merge; the `gh pr merge*` deny rule blocks the agents and the skill from merging.
 
 ## Production-touch posture
@@ -87,6 +87,25 @@ This skill targets `agent-friendly` issues, which by the six-criterion rubric ex
 
 - **Outcomes-log row: yes** — one per dispatched issue, **written by the orchestrator into the local-only (git-untracked) log**, never by the implementation agent and never committed. Cheap; gives ongoing data; feeds the eventual cross-repo comparison the case study names.
 - **Full session report: no, by default.** The PR description carries the substance. A brief may request one for an unusually complex issue, but it is not the default.
+
+## Telemetry (self-measuring) — the orchestrator emits events
+
+Alongside the human outcomes log, the orchestrator emits **machine-readable events** so the methodology measures its own effectiveness (the `report` skill rolls them up into the self-computing retrospective; schema in `../report/references/events-schema.md`). Emit with the report skill's helper — one append per call, from the **main session only** (never a worktree agent), local-only:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/skills/report/scripts/emit-event.sh" '<json event>'
+```
+
+Four emit points, mapped to the workflow:
+
+| When (step) | Event | Payload |
+|---|---|---|
+| Brief held at gate 3 (step 3) | `brief_held` | `{"event":"brief_held","issue":N,"reason":"..."}` |
+| Implementation agent dispatched (step 5) | `issue_dispatched` | `{"event":"issue_dispatched","issue":N,"mode":"autonomous"\|"review","agent_friendly":true}` |
+| Fresh-review verdict returned (step 6) | `review_verdict` | `{"event":"review_verdict","issue":N,"pr":P,"verdict":"PASS"\|"FAIL","blockers":B,"docs_check":"pass"\|"fail"}` |
+| Outcome finalized after the operator merges/closes (step 7) | `outcome_finalized` | `{"event":"outcome_finalized","issue":N,"pr":P,"outcome":"clean-merge"\|"needs-revision"\|"blocked"\|"abandoned"}` |
+
+The helper adds the timestamp and excludes the log locally (via `.git/info/exclude`) — do not commit `docs/agent-fixes/events.jsonl`. Skip `review_verdict` for a blocked report (no review runs). The events store only what GitHub can't reconstruct; everything else in the scorecard the `report` skill derives live from `gh`/`git`.
 
 ## Worked methodology reference
 

@@ -11,7 +11,7 @@ Every placeholder must become a statement verified against source this session. 
 
 ## Identification
 
-You are an autonomous agent resolving issue #{{N}} in the {{REPO}} codebase. You were launched via the Agent tool with `isolation: "worktree"` — you are in an isolated git worktree branched from `main`. The orchestrator is NOT in the loop during your run; you finish, open a PR, and the operator reviews it.
+You are an autonomous agent resolving issue #{{N}} in the {{REPO}} codebase. You were launched via the Agent tool with `isolation: "worktree"` — you are in an isolated git worktree branched from `main`. The orchestrator is NOT in the loop during your run; you finish, open a **draft** PR, and report back. A fresh-review agent then reviews your diff and the orchestrator marks the PR ready only on a pass.
 
 This brief is your contract. Every codebase fact below was verified against source at brief-writing time. If you read the source and it contradicts this brief, follow the source and flag the discrepancy in your PR description (see the disagreement taxonomy below).
 
@@ -24,7 +24,7 @@ This brief is your contract. Every codebase fact below was verified against sour
      1. ITERATE on the adjacent test files only (run a SCOPED, quiet test command targeting the one file — NOT verbose, never the full suite during iteration) — fast feedback, tiny output.
      2. ONCE the adjacent tests pass, run the FULL suite ONCE as the final gate, quiet. This is UNCONDITIONAL — do NOT gate it on "did I touch shared code?", because that is exactly the judgment that fails (a conftest/fixture change can silently break distant tests while the adjacent file stays green — the shared-fixture lesson). A passing full run prints ~one line, so it is nearly free in tokens; the cost only appears on failure, where you want it.
      3. If the final full run FAILS: fix it, but DROP BACK to scoped runs to iterate — do NOT loop on the full suite (a full-suite retry loop is the expensive pattern). Re-run the full suite once more only to confirm green. If you cannot reach green within the runaway bounds (~40 tool calls / Failure-mode guard), open a DRAFT PR naming the failing tests.
-     Also: reuse an existing venv / skip redundant dependency installs if deps are already present. Rationale: the dominant token sink is a failing-test retry loop with verbose output — scoped+quiet iteration plus a single quiet full-suite gate kills it while still catching cross-test breakage before the CI round-trip (so the ready-vs-draft decision is correct). -->
+     Also: reuse an existing venv / skip redundant dependency installs if deps are already present. Rationale: the dominant token sink is a failing-test retry loop with verbose output — scoped+quiet iteration plus a single quiet full-suite gate kills it while still catching cross-test breakage before the CI round-trip (so your believe-complete-vs-blocked report is honest). -->
 <!-- STALE-STATE DISCIPLINE: if a tool result comes back empty or a command is cancelled, do NOT fire a storm of retry/probe commands — re-run the ONE command once, and if still unclear, proceed from what you know or bail to a draft. Probe storms bloat context. -->
 <!-- BACKEND TESTS — Example (from the pilot): the project shipped one canonical, worktree-safe runner (`scripts/run-tests.sh`, issue #204): it spun a throwaway container from the project image, bind-mounted THIS worktree's `backend/` + the docker socket (so testcontainers could spawn its Postgres), ran as root, and published NO host ports — so it never collided with the operator's running `docker-compose` stack and always tested the worktree's code (not the main checkout). The agent was told NOT to spin `docker-compose up` from a worktree (port conflicts) and NOT to write a temp compose file. (Full instance in the case study.) For your repo, name the equivalent worktree-safe runner and its scoped / full / lint invocations here. -->
 
@@ -60,7 +60,7 @@ In all four: the PR description is where you surface the disagreement. Never sil
 
 ## Failure-mode escape hatch
 
-If the brief's primary path is blocked — the operation is structurally impossible, a required endpoint/method/field doesn't exist, the change would require out-of-scope work — STOP and open the PR as a **draft** with a comment describing exactly what's blocked. If the issue body anticipates an alternative (e.g., "if X isn't possible, the right answer is Y"), implement that alternative and note it. A draft PR with an honest "blocked on X; did Y instead" comment is a good outcome; a non-draft PR that silently worked around the block is a worse one.
+If the brief's primary path is blocked — the operation is structurally impossible, a required endpoint/method/field doesn't exist, the change would require out-of-scope work — STOP and open the PR as a **draft** with a comment describing exactly what's blocked. If the issue body anticipates an alternative (e.g., "if X isn't possible, the right answer is Y"), implement that alternative and note it. A draft PR with an honest "blocked on X; did Y instead" comment (reported as **blocked**) is a good outcome; reporting **believe-complete** while silently working around the block is a worse one — and the fresh review is likely to catch it and FAIL the diff anyway.
 
 **Runaway-iteration guard (cost guardrail).** This is binding. If you find yourself in ANY of these states, STOP immediately and open a draft PR describing where you got stuck — do NOT keep grinding:
 - You have made roughly **40+ tool calls** on this single issue, or
@@ -70,9 +70,9 @@ If the brief's primary path is blocked — the operation is structurally impossi
 
 A stuck agent that keeps retrying is the single most expensive failure mode — its context balloons and is re-processed every turn, and on long runs the re-read happens uncached past the prompt-cache TTL. Bailing to a draft at the ~40-call mark and letting the operator look is far cheaper than a 400-call self-recovery loop. When you bail, say in the draft comment exactly what you tried and where it broke.
 
-## Self-review checklist (before opening the PR)
+## Self-review checklist (your pre-handoff filter)
 
-Run this list. If any item fails, open the PR as a **draft** with a comment naming the failed item.
+Run this list before you report back. It is a cheap first filter, **not** the readiness decision — you open the PR as a draft either way (an independent fresh-review agent reviews your diff afterward and its pass is what marks the PR ready). If any item fails and you cannot resolve it in scope, report **blocked** with a comment naming the failed item, rather than handing off a diff you know is wrong.
 
 {{SELF_REVIEW_CHECKLIST}}
 <!-- Issue-specific checklist. Always include: only the in-scope files modified; lint clean vs main baseline (no new issues); build succeeds; PR description complete; production-touch line present. -->
@@ -82,12 +82,12 @@ Run this list. If any item fails, open the PR as a **draft** with a comment nami
 - **Branch**: `fix/issue-{{N}}-{{SHORT_SLUG}}`
 - **Title**: `fix(#{{N}}): {{SHORT_DESCRIPTION}}`
 - **Body must include**: a one-line summary; a **"Production touch: yes / no — verified by:"** line; the self-review checklist with each item marked; a test plan; `Closes #{{N}}`; and the `🤖 Generated with [Claude Code](https://claude.com/claude-code)` footer.
-- **Draft vs ready-for-review**: ready-for-review if all self-review items pass; draft otherwise (failure-mode escape hatch).
+- **Always open as a DRAFT.** You never open ready-for-review. After you report back, a fresh-review agent (none of your context) reviews the diff, and the orchestrator marks the PR ready only on a pass. Report **believe-complete** (finished, self-review clean) or **blocked** (draft-for-cause).
 - **DO NOT MERGE.** The operator merges. The `gh pr merge*` deny rule blocks you anyway.
 
 ## Deliverable on completion
 
-Report back to the orchestrator with: the PR number, draft-vs-ready status, what shipped, and any flags you surfaced. {{INSTRUMENTATION}}
+Report back to the orchestrator with: the PR number, the branch name, your status (**believe-complete** or **blocked**), what shipped, and any flags you surfaced. {{INSTRUMENTATION}}
 <!-- Default: just "Report back to the orchestrator." Do NOT instruct the agent to write the outcomes log — that file is git-untracked and the ORCHESTRATOR appends the row locally after you report (cost guardrail: agents writing it in their worktrees made every concurrent PR conflict on it). Add a session-report instruction here only for unusually complex issues. -->
 
 ## Begin by
@@ -96,8 +96,8 @@ Report back to the orchestrator with: the PR number, draft-vs-ready status, what
 2. Read the issue (`gh issue view {{N}}`) and the files named in "The task" above; confirm the verified facts still hold.
 3. Make the change, staying strictly within IN scope.
 4. Run the project's lint/build/test as named in operational notes; iterate until clean.
-5. Self-review checklist.
-6. Open the PR (draft if any checklist item failed; ready-for-review otherwise).
+5. Self-review checklist (your pre-handoff filter).
+6. Open the PR **as a draft** (readiness is conferred later by the fresh review).
 7. {{INSTRUMENTATION_STEP}} <!-- leave blank by default — the orchestrator writes the local-only outcomes-log row after you report; the agent does NOT touch the outcomes log -->
 8. Report back and STOP.
 ```

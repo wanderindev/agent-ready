@@ -27,10 +27,11 @@ You are an autonomous agent resolving GitHub issue #<N> in this codebase. You we
 Your complete briefing follows the separator below. It is your contract. It was assembled by verifying every codebase-fact claim against source at brief-writing time. If you read the source and it contradicts the brief, follow the source and flag the discrepancy in your PR description per the four-shape disagreement taxonomy in the brief.
 
 Key reminders:
-- Failure-mode policy: if any self-review item fails, open the PR as a DRAFT with a comment naming the failed item. A draft with an honest "blocked on X" comment is a good outcome.
+- **Open your PR as a DRAFT — always.** You do not decide ready-vs-draft. After you report back, a separate fresh-review agent (with none of your context) reviews your diff, and only its pass marks the PR ready. Your own self-review checklist is a pre-handoff filter, not the readiness decision.
+- Failure-mode policy: if the work is genuinely blocked (a self-review item fails, the primary path is impossible), open the draft with a comment naming the block and report **blocked**. A draft with an honest "blocked on X" comment is a good outcome — it skips the fresh review rather than failing it.
 - Do not merge. The gh pr merge* deny rule blocks you; the operator merges.
 - Stay strictly within the brief's IN scope. The OUT-of-scope list is binding.
-- Report back when done: PR number, draft-vs-ready, what shipped, any flags.
+- Report back when done with a clear status: **"believe-complete"** (you finished and self-review passed — ready for the fresh review) or **"blocked"** (draft-for-cause), plus the PR number, the branch name, what shipped, and any flags.
 
 Begin by reading the brief below in full, then follow its "Begin by" section.
 
@@ -41,7 +42,7 @@ Begin by reading the brief below in full, then follow its "Begin by" section.
 
 ## After launch
 
-The skill returns to the operator with the launch confirmation(s) (the agent id(s) and a one-line "agent dispatched for #N, will report on completion") and ends the turn. When each completion notification arrives, the skill proceeds to step 6 (report + instrument) of the workflow for that issue.
+The skill returns to the operator with the launch confirmation(s) (the agent id(s) and a one-line "agent dispatched for #N, will report on completion") and ends the turn. When each completion notification arrives, the skill proceeds to step 6 (fresh-session review — `references/fresh-review.md`) for a believe-complete report, then step 7 (report + instrument) for that issue; a blocked report skips step 6.
 
 ## Notes
 

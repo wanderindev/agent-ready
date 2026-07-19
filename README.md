@@ -2,15 +2,15 @@
 
 **A methodology for making an existing codebase safe and clear enough to hand work to AI agents — then resolving the backlog with autonomous agents on the tractable subset and human pairing on the rest.**
 
-> Status: **v0.1 — all seven skills built; pending live validation.** The
-> manifests, methodology docs, case study, and all skills are in place. The whole
-> pipeline has not yet been run end-to-end on a second codebase — that's the next
-> milestone, and the methodology stays v1 (calibrated to one codebase) until it
-> is. See [Roadmap](#roadmap).
+> Status: **v0.1 — nine skills across two plugins; pending live validation.** The
+> manifests, methodology docs, case study, guardrails, and all skills are in
+> place. The whole pipeline has not yet been run end-to-end on a second codebase
+> — that's the next milestone, and the methodology stays v1 (calibrated to one
+> codebase) until it is. See [Roadmap](#roadmap).
 
 This repository is a [Claude Code](https://claude.com/claude-code) **plugin
-marketplace**. Installing the plugin gives you a set of skills that walk a
-project through the full pipeline:
+marketplace** shipping two plugins. Installing them gives you a set of skills
+that walk a project through the full pipeline:
 
 1. **Bootstrap** the repository for agent work — branch protection, CI, issue
    labels, issue templates.
@@ -19,6 +19,11 @@ project through the full pipeline:
    backlog of issues.
 4. **Resolve** those issues — autonomously where the audit proved the work
    tractable, in pair-mode where judgment is load-bearing.
+
+Wrapping that pipeline: a companion **guardrails** plugin installs the safety
+floor (destructive actions denied, production gated, secrets protected),
+**`setup`** wires the whole thing up in one idempotent command, and **`report`**
+computes how well the loop is actually working.
 
 It was extracted from a real audit-to-autonomy run on a deployed bilingual
 content-and-booking site, where the methodology took the project from a
@@ -104,15 +109,23 @@ lower-friction for a solo reviewer.
 ## How it fits together
 
 ```
+setup ─ one idempotent command: guardrails floor + bootstrap + docs + health check
+  │
+  ▼
 repo-bootstrap ──► methodology-install ──► area-audit (×N) ──┬─► plan-epic ─► fix-epic   (pair-mode clusters)
-   (infra)            (docs)                  (backlog)       └─► fix-issue              (autonomous subset)
+   (infra)            (docs)                  (backlog)       └─► fix-issue ─► fresh review (autonomous subset)
+                                                                     │
+                                                                     ▼
+                                                 report ─ self-computed scorecard of the loop
 ```
 
 Plugins are read-only once installed; they cannot push GitHub state or write
-files into your project on their own. So the two **setup** skills do that work
-explicitly, running `gh`/`git`/`cp` against your target repo. The bundled
-templates they copy out live under `plugins/agent-ready/assets/` and are
-referenced at runtime via `${CLAUDE_PLUGIN_ROOT}`.
+files into your project on their own. So the **Setup-phase** skills do that work
+explicitly, running `gh`/`git`/`cp` against your target repo — `setup`
+orchestrates `repo-bootstrap` (infra) and `methodology-install` (docs), and
+installs the guardrails policy into your Claude settings. The bundled templates
+they copy out live under `plugins/agent-ready/assets/` and are referenced at
+runtime via `${CLAUDE_PLUGIN_ROOT}`.
 
 ## Repository layout
 
@@ -121,7 +134,7 @@ agent-ready/
 ├── .claude-plugin/marketplace.json     # makes this repo an installable marketplace (two plugins)
 ├── plugins/agent-ready/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/                         # the eight skills above
+│   ├── skills/                         # the nine skills above
 │   └── assets/                         # templates the setup skills copy into a target
 │       ├── github/                     # labels.json + ISSUE_TEMPLATE/
 │       ├── ci/                         # stack-specific CI workflow stubs

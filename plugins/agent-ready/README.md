@@ -13,8 +13,9 @@ setup skills copy into a target repository.
 | [`area-audit`](skills/area-audit/) | lifted | Scaffold + gate the 10-slot area-audit prompt. |
 | [`plan-epic`](skills/plan-epic/) | built | Cluster the open backlog by severity into a workable epic; propose 2–3, create the chosen one. |
 | [`fix-epic`](skills/fix-epic/) | built | Execute an epic in pair-mode — one coherent branch/PR for the whole cluster. |
-| [`fix-issue`](skills/fix-issue/) | lifted | Drive issues to agent-written PRs through a gated brief→implementation pipeline (autonomous). |
+| [`fix-issue`](skills/fix-issue/) | lifted | Drive issues to agent-written PRs through a gated brief→implementation pipeline, with an independent fresh-session diff review conferring readiness (autonomous). |
 | [`update-pr`](skills/update-pr/) | lifted | Bring an open PR up to date with `main` in an isolated worktree. |
+| [`report`](skills/report/) | built | Print the self-computed methodology scorecard — backlog/clarity, autonomous quality (outcomes + fresh-review pass rate), safety, throughput. Read-only; joins a local event log with live `gh`/`git`. |
 
 ## Assets
 

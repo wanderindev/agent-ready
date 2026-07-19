@@ -56,6 +56,12 @@ productive from minute one. The full, honest account is in the
 
 Skills then appear namespaced as `/agent-ready:<skill>`.
 
+Then run **`/agent-ready:setup`** — one idempotent command that does the rest:
+preflight, install the guardrails policy on this machine, ensure your target
+repo is bootstrapped and documented, and health-check the result. Re-run it
+anytime to repair a half-configured setup. The sections below explain the
+pieces it wires together.
+
 ### Guardrails (install first)
 
 The methodology's skills assume a deny/ask/allow floor already exists in the
@@ -80,6 +86,7 @@ to extend it for your stack.
 
 | Skill | Phase | What it does |
 |---|---|---|
+| `setup` | Setup | One-run, idempotent onboarding: preflight, install the guardrails policy on this machine, ensure the repo is bootstrapped + documented (delegates to the two below), then health-check. Re-run to repair. |
 | `repo-bootstrap` | Setup | Idempotently configures git branch protection, a CI workflow, issue labels, and issue templates on the target repo (via `gh`/`git`). |
 | `methodology-install` | Setup | Copies the methodology docs into the target's own tree, walks the worked-example placeholders for domain-appropriate replacements, and resets the cross-session register. |
 | `area-audit` | Audit | Scaffolds the 10-slot area-audit prompt for one area, gating on the per-area fills; enforces the closing gates when a session reports back. |
@@ -140,6 +147,7 @@ agent-ready/
 - [x] Add the `agent-ready-guardrails` plugin (deny/ask/allow baseline + PreToolUse guard + installer)
 - [x] Add fresh-session review to `fix-issue` (independent diff review confers PR readiness)
 - [x] Add the `report` skill (self-computing methodology scorecard from a local event log + live `gh`/`git`)
+- [x] Add the `setup` skill (idempotent onboarding: preflight + guardrails install + bootstrap/docs + health check)
 - [ ] Validate the whole pipeline on a second codebase
 
 ## Status & honesty

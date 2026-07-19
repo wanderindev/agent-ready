@@ -8,6 +8,7 @@ setup skills copy into a target repository.
 
 | Skill | Status | Purpose |
 |---|---|---|
+| [`setup`](skills/setup/) | built | One-run idempotent onboarding — preflight, install the guardrails policy, ensure the repo is bootstrapped + documented (delegates), health-check. Re-run to repair. |
 | [`repo-bootstrap`](skills/repo-bootstrap/) | built | Configure branch protection, CI, labels, issue templates on a target repo. |
 | [`methodology-install`](skills/methodology-install/) | built | Copy methodology docs into a target, rewrite dangling cross-links, init the prompts dir + empty register. |
 | [`area-audit`](skills/area-audit/) | lifted | Scaffold + gate the 10-slot area-audit prompt. |

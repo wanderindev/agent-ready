@@ -1,0 +1,2586 @@
+
+---
+
+I'm starting a multi-phase pilot to introduce autonomous and semi-autonomous
+agentic workflows to this project (Panama In Context). The project has been
+in production for several months but largely untouched — it's roughly 70%
+complete with known unfinished features and accumulated technical debt from
+moving fast during initial development.
+
+The broader pilot has 7 phases. You and I will work through them sequentially.
+This conversation is strictly about Phase 0: re-establishing baseline.
+
+The goal of Phase 0 is to make sure the project is in a known-good state
+before any agent does autonomous work on it. We are NOT fixing code quality
+issues, adding features, or refactoring in this phase. We are auditing,
+verifying, and setting up safety nets.
+
+## Phase 0 checklist
+
+Please help me work through these, in order. After each one, stop and report
+findings before moving on — don't chain through them autonomously.
+
+1. **Tool Search verification.** Run `/doctor` and `/context`. Report which
+   MCP servers are connected, total token cost of tool definitions, and
+   whether Tool Search has activated (it kicks in automatically above 10K
+   tokens of tool definitions). If any MCP is loading heavily but rarely
+   used in this project, flag it.
+
+2. **CLAUDE.md audit.** Read the current CLAUDE.md (and any nested ones).
+   Compare what it claims about the project against what's actually true
+   in the codebase right now. Specifically check:
+   - Stated tech stack vs actual (we migrated from Flask to FastAPI;
+     confirm CLAUDE.md reflects that)
+   - Stated directory structure vs actual
+   - Any references to deprecated dependencies (we used to use Rube; we
+     still use Composio for email but plan to replace it)
+   - Any stated conventions that the code no longer follows
+   Produce a diff proposal — don't apply changes yet. I want to review
+   before we update.
+
+3. **Build and test verification.** Confirm:
+   - Dependencies install cleanly
+   - The application builds/starts locally
+   - The test suite runs and passes (if any tests are flaky or skipped,
+     flag them — don't fix)
+   - Report test coverage if it's measurable
+   If anything is broken, stop and report. Don't fix.
+
+4. **Sentry connection check.** Verify Sentry is still wired up correctly
+   in the application (DSN configured, error reporting code paths intact).
+   Don't trigger test errors — just confirm the integration is in place
+   based on the code.
+
+5. **GitHub repo hygiene check.** Look at:
+   - Branch protection status on main (if accessible via gh CLI)
+   - Whether there are open PRs or stale branches I should clean up
+   - .gitignore covers what it should
+   - Any secrets accidentally committed (do a quick scan)
+
+6. **Backlog readiness.** Verify the GitHub issue templates and labels
+   I'll need for later phases exist or need to be created. Specifically,
+   I'll want labels: `code-quality:critical`, `code-quality:moderate`,
+   `code-quality:nice-to-have`, `agent-friendly`, `bug`, `enhancement`.
+   List what's missing — don't create them yet.
+
+## Working style for this phase
+
+- Read-only first. Don't modify files unless I explicitly approve.
+- Report findings clearly with file paths and line numbers where relevant.
+- If you discover problems that aren't part of Phase 0, note them in a
+  "deferred findings" list — we'll convert those into GitHub issues during
+  Phase 1, not now.
+- Ask before running anything that costs significant tokens or makes
+  external calls (Sentry API, GitHub API beyond basic reads, etc.).
+
+Start with item 1 and wait for me to confirm before moving to item 2.
+
+---
+
+We're starting Phase 1 prep. This is a focused setup task that produces a
+single PR before we begin Phase 1 proper (the codebase audit and issue
+filing).
+
+Phase 0 is complete. Its report is in docs/pilot/phase-0-report.md (or
+wherever you've stored it — locate it if needed). Read it first so you
+understand the context, the Phase 1 backlog already identified, and the
+overall pilot structure.
+
+## Goal of this session
+
+Land the infrastructure that Phase 1 proper will use to track its findings.
+Specifically, one PR that adds:
+
+1. The 4 missing GitHub labels
+2. The 4 GitHub issue templates
+3. A written `agent-friendly` criteria document
+4. A short Phase 1 README explaining how the labels and templates relate
+
+Nothing else. No code-quality fixes, no audits, no opening of issues. We're
+building the filing cabinet, not filling it.
+
+## Item 1 — Create the missing labels
+
+These four labels are missing per the Phase 0 audit:
+- `code-quality:critical`
+- `code-quality:moderate`
+- `code-quality:nice-to-have`
+- `agent-friendly`
+
+Create them via `gh label create`. Pick sensible colors — the three
+`code-quality:*` labels should share a color family that signals severity
+(e.g. red/orange/yellow), `agent-friendly` should be visually distinct
+(e.g. green or blue) since it's an orthogonal axis.
+
+Include short descriptions on each label. The `agent-friendly` description
+should reference the criteria document we'll create in item 3.
+
+These are created via the API, not via files, so they don't go through the
+PR. Do this first and confirm with me before moving on.
+
+## Item 2 — Create the 4 issue templates
+
+In `.github/ISSUE_TEMPLATE/`:
+
+- `bug_report.yml` — for bugs found in production or local testing. Should
+  capture: what happened, what was expected, reproduction steps, affected
+  area, Sentry link if applicable, severity.
+- `feature_request.yml` — for new features or significant enhancements.
+  Should capture: problem being solved, proposed solution, scope estimate
+  (small/medium/large), any PRD/ADR reference.
+- `code_quality.yml` — for refactors, technical debt, code smells. Should
+  capture: location (file/module), current state, desired state, why it
+  matters, whether it's `agent-friendly` per the criteria.
+- `agent_task.yml` — for work specifically scoped for autonomous agent
+  execution. Should capture: clear acceptance criteria, files in scope,
+  files explicitly out of scope, test requirements, link to the
+  `agent-friendly` criteria doc, any safety notes.
+
+Use GitHub's issue form (YAML) format, not the legacy Markdown format —
+the forms give better structure and are easier for both humans and agents
+to fill out consistently.
+
+Also add `.github/ISSUE_TEMPLATE/config.yml` to disable blank issues and
+point to the agent-friendly criteria doc as a contact link.
+
+Show me the templates before committing — I want to review the field choices.
+
+## Item 3 — Write the `agent-friendly` criteria document
+
+Create `docs/pilot/agent-friendly-criteria.md`. This document is the
+authoritative answer to "should this issue be marked agent-friendly?"
+
+Base it on the criteria already discussed in the pilot:
+- Single-file or tightly-scoped multi-file change
+- No business logic decisions required
+- No schema migrations
+- No changes to auth, payment, or PII handling
+- Tests exist for the affected area, or can be added trivially
+- Clear acceptance criteria
+
+Expand each one with a sentence or two of context. Include 2-3 worked
+examples: an issue that clearly qualifies, an issue that clearly doesn't,
+and a borderline case with the reasoning for which side it lands on.
+
+Also include a short section on what "stop the line" means in this project:
+during any agent or audit session, if a serious security issue or an actual
+production bug affecting the public-facing UI is discovered, it gets fixed
+inline rather than deferred. Everything else gets deferred to an issue.
+
+Keep the doc under 200 lines. It should be readable in 5 minutes.
+
+## Item 4 — Write a Phase 1 README
+
+Create `docs/pilot/phase-1-readme.md`. Brief — under 100 lines.
+
+It should explain:
+- What Phase 1 is about (audit existing code, file issues, no fixes except
+  stop-the-line)
+- How the labels work and when to apply each
+- How the issue templates map to the work
+- How `agent-friendly` is determined (link to the criteria doc)
+- What Phase 1 explicitly does NOT do (no fixes, no refactors, no new
+  features — that's Phase 4+ work)
+- A pointer to the Phase 0 report and the broader pilot structure
+
+This becomes the doc I send to my own future self when I come back to this
+project after a break.
+
+## PR
+
+Once items 2-4 are done, open a PR with all of them in a single commit
+(or a small number of logically grouped commits). Title:
+`Phase 1 prep: labels, issue templates, and agent-friendly criteria`.
+
+PR description should reference the Phase 0 report and explain that this
+unblocks Phase 1 proper.
+
+Branch protection is on, so the PR will need to pass CI and be approved
+before merging. Since I'm the only reviewer, I'll review and merge it
+myself. Don't merge from your end.
+
+## Working style
+
+- Confirm with me after item 1 (labels created) before starting item 2.
+- Show me the issue template YAMLs before committing them.
+- Don't open any issues during this session. Even if you notice problems,
+  add them to a "Phase 1 candidates" note at the bottom of your session
+  output — but don't file them yet.
+- If something doesn't fit cleanly in scope, ask rather than expand.
+
+---
+
+We're starting Phase 1 proper. Phase 0 is complete (report at
+docs/pilot/phase-0-report.md) and Phase 1 prep just merged (PR #2 added
+labels, issue templates, the agent-friendly criteria doc at
+docs/pilot/agent-friendly-criteria.md, and the Phase 1 README at
+docs/pilot/phase-1-readme.md). Read these first so you understand the
+scaffolding we're filing against.
+
+## What Phase 1 is, and isn't
+
+Phase 1 is a structured audit of the existing codebase that produces a
+backlog of well-scoped GitHub issues. It does NOT fix anything — except
+the stop-the-line exceptions defined in the criteria doc (serious security
+issues, actual production bugs affecting the public-facing UI).
+
+Phase 1 will take multiple sessions. This session is Part A: convert the
+Phase 0 deferred backlog into properly structured GitHub issues. Once
+that's done, we'll have a follow-up session for each audit area.
+
+## Part A — File the Phase 0 deferred backlog
+
+The Phase 0 report contains a "Phase 1 backlog (deferred findings)"
+section organized by High / Medium / Lower value. For each item:
+
+1. Determine which issue template applies:
+   - `code_quality.yml` for refactors, technical debt, code smells, lint
+     issues, deprecation warnings
+   - `bug_report.yml` for actual bugs (probably none in the backlog, but
+     check)
+   - `feature_request.yml` for new capabilities (also probably none —
+     this is a cleanup phase)
+   - `agent_task.yml` only for items that pass the 6-checkbox gate and
+     genuinely qualify per the criteria doc
+
+2. Determine severity label:
+   - `code-quality:critical` — security-relevant, correctness-relevant,
+     or blocking other work
+   - `code-quality:moderate` — meaningful improvement to maintainability,
+     reliability, or developer experience
+   - `code-quality:nice-to-have` — cosmetic, low-impact, or purely
+     speculative
+
+3. Determine if it's `agent-friendly`. Run it through the criteria doc
+   honestly — don't be permissive. Borderline cases default to NO. The
+   ruff sweep example in the criteria doc is your reference point for
+   "borderline but qualifies"; if your item isn't at least that clearly
+   bounded, it's not agent-friendly yet.
+
+4. Write the issue body using the template's required fields. Be specific
+   — reference file paths, line numbers, the symptom or smell, what the
+   desired end state looks like, and any context an agent or future-you
+   would need to act on it later.
+
+## Working style for this session
+
+- **Batch and confirm.** Don't open issues one at a time and wait for me
+  on each. Group them in batches of 3-5 logically related items, show me
+  the proposed titles + labels + agent-friendly classification for the
+  batch, wait for approval, then open them. This is the show-before-act
+  pattern we want to reinforce after the Phase 1 prep drift.
+
+- **Don't expand scope.** If you notice issues during this session that
+  weren't in the Phase 0 report, note them at the end in a "newly
+  observed" section. Don't file them — they'll be picked up in Part B's
+  proper audit.
+
+- **Stop-the-line still applies** but is unlikely to trigger here since
+  we're reading the Phase 0 report, not exploring code. If it does
+  trigger, surface immediately rather than continuing.
+
+- **Cross-reference issues.** If two backlog items are related (e.g.
+  "drop orphan tables" and "generate initial alembic migration"), link
+  them in the issue bodies. Future-me (or an agent) needs to know that
+  fixing one without the other is incomplete.
+
+- **Skip the history rewrite item.** I've decided not to do that
+  retroactive cleanup. Note in your output that it's intentionally
+  not filed.
+
+## Part B planning (end of session)
+
+After all Phase 0 backlog items are filed, propose an audit plan for
+Part B. Specifically:
+
+- Identify 4-7 audit areas in the codebase (e.g. "content pipeline",
+  "FastAPI routers and request handling", "data layer / SQLAlchemy
+  models", "auth", "background tasks and long-running operations",
+  "frontend state management", "frontend Sentry integration", etc.).
+  Pick the divisions that make sense for THIS codebase, not generic
+  ones.
+
+- For each area, estimate session size (small / medium / large) based
+  on file count, complexity, and known problem density from Phase 0.
+
+- Propose an order. Highest-leverage areas first — places where the
+  Phase 0 audit hinted at problems, or areas where bugs would be most
+  expensive (data integrity, auth, payments).
+
+- Flag any areas you think we should explicitly skip — code that's
+  stable, well-tested, or low enough risk that audit time is better
+  spent elsewhere.
+
+This is a proposal for me to react to, not a plan to execute. Don't
+start any audit this session.
+
+## PR strategy
+
+Filing GitHub issues doesn't require a PR — issues are created via the
+GitHub API directly. No commits, no PR for this session. The audit
+plan at the end can be a comment on this conversation or, if it's
+substantial, a draft `docs/pilot/phase-1-audit-plan.md` that we land
+as a separate small PR before Part B begins.
+
+Begin by re-reading the three pilot docs (phase-0-report.md,
+agent-friendly-criteria.md, phase-1-readme.md), then propose the first
+batch of issues to file. Wait for my approval before creating anything.
+
+---
+
+We're starting Phase 1 Part B with Area 1: Data layer & SQLAlchemy models.
+
+The audit plan at docs/pilot/phase-1-audit-plan.md is the authoritative scope
+document for Part B. Read it first if context has rolled. The areas, their
+ordering, and the working style for each session are all defined there.
+
+This session covers Area 1 only. Resist scope drift into other areas — note
+findings that belong elsewhere in "newly observed" at the end.
+
+## Scope
+
+Per the audit plan:
+- `backend/app/models/` (all model files, relationships, constraints,
+  indexes, enums, defaults, nullables)
+- `backend/alembic/` (migration history, configuration)
+- Patterns in use: soft-delete / status fields, audit timestamps,
+  enum conventions, FK behaviors, cascade rules
+
+Out of scope for this session (will be covered in their own areas):
+- Pydantic schemas (those are partly Area 2/3/4 territory and partly their
+  own thing — flag interesting findings, don't file)
+- Service-layer code that uses the models
+- Anything outside `backend/app/models/` and `backend/alembic/`
+
+## Context, not work to do
+
+Two existing issues are inputs to this audit, NOT work for this session:
+- #3 (generate initial alembic migration)
+- #4 (drop 9 orphan tables + 7 orphan enums in prod)
+
+You don't need to act on these. They exist; the audit can assume they'll
+get done in Phase 2+. But if you find evidence during the audit that
+should be added to those issues as context (e.g. specific FK dependencies
+between the orphans, or schema details that affect how the initial
+migration should be generated), add a comment to the relevant issue with
+your finding. Don't change the issue body — comment only.
+
+## One small mystery to resolve
+
+The Phase 0 report counted 4 Pydantic schema files with v1 `class Config`
+deprecation warnings. The Phase 1 Part A issue (#12) was filed against
+2 files. Worth a 2-minute check: are there really only 2, or did Part A
+miss some? Resolve this and either update issue #12 with the correct
+count + file list, or note it as resolved if 2 was right.
+
+This is the only "resolve and update" task in this session — everything
+else is read-only auditing.
+
+## What to look for
+
+Standard things in a data-layer audit:
+
+**Schema hygiene**
+- Columns that should be NOT NULL but are nullable (or vice versa)
+- Missing or misnamed indexes on FK columns, frequently-filtered columns,
+  or columns used in ORDER BY
+- FK constraints with weak cascade behavior (e.g. ON DELETE SET NULL where
+  CASCADE would be safer, or vice versa)
+- Inconsistent use of `created_at` / `updated_at` across models
+- Soft-delete patterns applied inconsistently
+- Enum types defined inline vs. as proper PG enums vs. as string columns
+  with check constraints — pick the inconsistencies
+
+**Relationship correctness**
+- Backrefs vs back_populates inconsistency
+- Lazy-loading strategy mismatches (default N+1 risks)
+- Cascade configurations that don't match the FK constraint
+- Orphan relationships (model A points to B; B has no awareness of A)
+
+**Drift between model and database**
+- Phase 0 found 7 columns of drift across `taxonomies`, `categories`,
+  `media`. Check whether the models are now the source of truth (i.e.
+  prod schema has extra columns) or the database is (prod is missing
+  columns the model expects). The Phase 0 seed script masked some of
+  this — read it for hints on which way the drift goes.
+
+**Migration history sanity**
+- Are there migrations that were applied but later reverted via direct
+  SQL? (Look for migration files referencing columns/tables that no
+  longer exist.)
+- Are there branches in the alembic history that shouldn't exist?
+- Any migrations that have been edited after being applied to prod
+  (a real risk on solo projects)?
+
+**Convention drift**
+- Mixed naming conventions (singular vs plural table names, camelCase
+  vs snake_case column names, _id vs Id suffixes)
+- Mixed use of `String(N)` with different N for the same kind of data
+  (e.g. emails sometimes 255, sometimes 320)
+
+## Working style
+
+- **Batch-and-confirm** as in Part A. Group findings into batches of
+  3-5, propose titles + labels + agent-friendly classification, get
+  approval, file.
+- **Severity calibration:** A nullable column that allows real data
+  corruption is `code-quality:critical`. A missing index that hurts
+  query perf on a non-hot path is `code-quality:moderate`. A
+  cosmetic naming inconsistency is `code-quality:nice-to-have`.
+- **Agent-friendly calibration:** Schema changes are explicitly NOT
+  agent-friendly per the criteria doc, even when small. Naming-only
+  refactors on internal columns might be; column type changes or
+  constraint changes are not.
+- **Stop-the-line:** If you find evidence of active data corruption,
+  a FK constraint that's silently dropping referential integrity, or
+  a soft-delete bug exposing supposedly-deleted records via the public
+  API — surface immediately and we'll fix inline before continuing the
+  audit.
+- **End-of-session report.** Same shape as the Phase 0 report:
+  executive summary, by-the-numbers, item-by-item findings, what's
+  filed vs what's deferred, "newly observed" items for other audit
+  areas. Save it as `docs/pilot/phase-1-area-1-report.md` and open
+  a small PR for it (branch protection requires PR even for docs).
+
+## What this session probably looks like
+
+A guess at scope: this is the smallest of the six areas. Reading
+through ~20-40 model files and the alembic directory, comparing
+against prod schema (which we already have a local mirror of from
+Phase 0), should take 1-2 hours of focused work. Findings volume:
+my expectation is 5-10 issues filed. If you're approaching 20+
+findings, something is wrong — either the codebase has more rot
+than expected (in which case stop and surface) or you've drifted
+into scope creep (in which case stop and re-scope).
+
+Begin by reading the audit plan, the Phase 0 report's data-layer
+sections (Item 3a especially), and issues #3, #4, and #12 for
+context. Then propose how you want to approach the audit — by file,
+by model domain (content / users / educators / orders / etc.), or
+by concern (constraints first, then indexes, then relationships).
+Wait for my approval on the approach before starting.
+
+---
+
+We're starting Phase 1 Part B Area 2: Payments, bookings, orders & PayPal webhook.
+
+The audit plan at docs/pilot/phase-1-audit-plan.md remains the authoritative
+scope document. Read it again if context has rolled, plus the Area 1 report
+at docs/pilot/phase-1-area-1-report.md — it contains specific findings
+seeded for this area in the "Newly observed" section. Treat those as
+known inputs to verify, not as findings to rediscover.
+
+## Why this area matters
+
+This is the highest-financial-blast-radius area in the codebase. A bug
+here is a duplicate charge, a lost booking, a webhook idempotency failure,
+or an unreconciled payment. Audit thoroughness here is worth more than
+in any other area.
+
+The Phase 0 work also fixed a real production bug in `tours.py` (the
+`ticket_child_*` AttributeError) and found that the PayPal credential in
+`docker-compose.prod.yml` did not match the PayPal account console. The
+absent Sentry noise from that mismatch is strong signal that either
+the integration never ran in real bookings, or it silently swallowed
+every failure. **Approach the PayPal portion of this audit assuming
+the integration may be dead code.** Verify before assuming anything works.
+
+## Scope
+
+In-scope files (read all in full):
+- `backend/app/api/tours.py`, `bookings.py`, `orders.py`, `webhooks.py`
+- `backend/app/services/` — anything payment, booking, order, or PayPal
+  related (likely `paypal_*.py`, `booking_service.py`, `order_service.py`,
+  but locate by reading rather than guessing)
+- `backend/app/schemas/` — the Pydantic schemas for the above
+- The PayPal webhook handler specifically, including signature
+  verification, idempotency, and replay protection
+- The order state machine (statuses, transitions, terminal states)
+- Frontend checkout flow (`frontend/src/` — pages and components in the
+  checkout path)
+
+Out of scope (note in "newly observed" if interesting):
+- Auth and educator-gate code (Area 3)
+- Non-payment service modules (Area 4)
+- Public-site code outside the checkout flow (Area 5)
+- Admin CMS (Area 6)
+
+## Forensic question: is PayPal integration alive?
+
+This is the single most important question this audit answers, and it
+needs to be answered before any of the other findings can be properly
+prioritized. If the integration is dead, half the issues filed for the
+PayPal code path are moot; if it's live, the credential mismatch was a
+near-miss.
+
+To answer it, you need to inspect production. Read the next section
+on prod access before attempting anything.
+
+The investigation:
+1. Read the PayPal integration code first. Map every code path that
+   should touch a real PayPal API — order creation, capture, webhook
+   receipt, refund.
+2. Check for any logging, Sentry breadcrumbs, or audit-log writes that
+   would leave evidence in prod if the path executed.
+3. Query prod (via the gated method below) for: orders with `status =
+   'paid'` or equivalent, any rows in a webhook-event audit table if
+   one exists, recent rows in `BookingStatusLog`, payment-method
+   distribution across orders, the date range of orders that have
+   a non-null `paypal_*` column.
+4. Cross-reference with the credential-mismatch finding: orders
+   created BEFORE the credentials drifted vs. orders created AFTER.
+   The dividing date is in the Phase 0 report (credentials were
+   committed 2025-12-22; mismatch was discovered during Phase 0
+   on 2026-05-17).
+5. Report a clear conclusion: "PayPal integration appears live, with
+   evidence X, Y, Z" or "PayPal integration appears dead/never-used,
+   with evidence X, Y, Z" or "Inconclusive — here's what we'd need
+   to determine it."
+
+The conclusion goes into the Area 2 report and shapes the agent-friendly
+classification of every PayPal-related issue you file. If it's dead code,
+most findings drop to nice-to-have. If it's live, the credential mismatch
+itself becomes a critical retroactive finding.
+
+## Production data access
+
+Area 1 hit the auto-mode classifier denying `psql` against the prod URL.
+For this area we're going to handle prod access differently:
+
+**Option chosen for Area 2:** Surface for explicit approval at the top of
+the session. Before running any prod query, propose the exact command
+you want to run, what data it will return, and why you need it. I'll
+approve or reject each one. This is slower than auto-approval but gives
+me a clear audit trail of every prod read this session performs, which
+matters more here than anywhere else given the financial-data sensitivity.
+
+Use the `.env.prod-readonly` source pattern from Phase 0 — that file is
+gitignored and chmod 600 on my droplet; sourcing it into the session
+gives you DATABASE_URL but no write credentials. If a query needs more
+than read access, stop and tell me — we don't have a path for that.
+
+**Specifically do not:**
+- Query PII tables (`bookings`, `contact_submissions`, `educators`,
+  `users`) for actual row data. Aggregates are fine — `SELECT COUNT(*),
+  MIN(created_at), MAX(created_at) FROM bookings WHERE status = ...`
+  is fine. `SELECT * FROM bookings LIMIT 5` is not.
+- Pull any payment amounts at the individual-row level. Sums and
+  counts only.
+- Touch any PayPal API endpoint, even sandbox. We're auditing code,
+  not making test calls.
+
+## Things to look for (beyond the PayPal forensic question)
+
+**Order state machine**
+- Are all status transitions enforced somewhere (service layer, DB
+  constraint, or both)? If service-layer only, are there gaps where
+  a status could be set directly?
+- Terminal states: once an order is `refunded` or `cancelled`, can it
+  transition back? Should it be able to?
+- Concurrency: two webhooks for the same order arriving simultaneously —
+  is there row-level locking, an idempotency key, a unique constraint?
+
+**Webhook handling**
+- PayPal signature verification: is it actually performed, or is the
+  endpoint accepting unsigned requests?
+- Idempotency: if PayPal retries a webhook (it will), does the second
+  delivery produce a duplicate side effect or get safely no-op'd?
+- Replay window: is there protection against an old captured webhook
+  being resubmitted?
+- Error handling: a webhook that fails — does it return a 5xx so PayPal
+  retries, or a 2xx that drops the event?
+
+**Booking ↔ Order ↔ Payment reconciliation**
+- The newly-observed item from Area 1: `Order.subtotal` and
+  `Order.grand_total` exist, but discount lives on `Booking`. Walk
+  through the math — does it reconcile when an order has multiple
+  bookings with different senior-discount totals?
+- `Order.payment_method` is plain `String(20)` (per #24) — what values
+  does the service layer actually insert? Is there an unenumerated
+  list of valid values somewhere, or is it free-form?
+- Refunds: are partial refunds supported? If yes, how does the
+  reconciliation work?
+
+**Public-API contract for bookings**
+- `tours.py` had a production bug Phase 0 caught. Look hard at any
+  other endpoint serializing model fields — is there a similar
+  `AttributeError` waiting to happen?
+- Any endpoint that takes user input and uses it in a query without
+  proper validation? Especially anything constructing filter clauses
+  from query params.
+
+**Frontend checkout flow**
+- Is there client-side computation of totals that the backend doesn't
+  re-verify? (Classic vulnerability — never trust the client's price.)
+- Sentry breadcrumbs on the checkout path: would a failed payment leave
+  a clear trail in the frontend Sentry project, or would it surface as
+  a generic error?
+- The three pages with `Sentry.withErrorBoundary` per Phase 0 (Checkout,
+  OrderConfirmation, Contact) — are those boundaries sufficient, or
+  would a checkout failure leak past them?
+
+## Working style
+
+- **Batch-and-confirm**, same as previous sessions.
+- **Severity calibration is stricter here.** A bug in the order state
+  machine that could double-charge is `code-quality:critical` even if
+  the PayPal integration is dead today (because the same machinery may
+  be wired to something live later). A missing webhook signature check
+  is `code-quality:critical` regardless of whether the path is live.
+  An unenumerated `payment_method` string is `code-quality:moderate`.
+  An ungainly variable name in `orders.py` is `code-quality:nice-to-have`.
+- **Agent-friendly is rarer here.** Anything touching payment math,
+  state machines, webhook handling, or schema changes is NOT
+  agent-friendly. Mostly only cosmetic or doc-only issues in this
+  area will qualify.
+- **Stop-the-line:** If you find an active vulnerability — unsigned
+  webhook endpoint accepting writes, SQL injection in a public endpoint,
+  a path where a client can manipulate price server-side, an order
+  status that can be flipped without auth — surface immediately. We
+  fix inline before continuing the audit.
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-2-report.md`. Same shape as Area 1:
+executive summary, by-the-numbers, what was audited, item-by-item
+findings, what's filed vs deferred, newly observed for other areas,
+what surprised you, process notes for the next area.
+
+**One additional required section for this report:** "PayPal integration
+status." A clear conclusion (alive / dead / inconclusive), the evidence
+behind it, and what changes if the conclusion is wrong. This becomes a
+reference point for every future payment-related decision on this
+project.
+
+## Scope estimate
+
+This is bigger than Area 1. Expect 2-3 hours of focused work and
+10-15 issues filed. If you're approaching 25+ findings, something is
+wrong — either the codebase has more rot in this area than expected
+(surface and we'll regroup) or you've drifted into Area 3 or 4
+territory.
+
+Begin by:
+1. Reading the audit plan, the Area 1 report (especially the "Newly
+   observed for Area 2" subsection), and the Phase 0 report's
+   payment-relevant findings (the `tours.py` bug, the credential
+   mismatch).
+2. Mapping out the PayPal forensic investigation as a concrete plan:
+   what code reads, what prod queries (with the gating pattern above),
+   what conclusion criteria.
+3. Proposing a session structure to me — probably "forensic first,
+   then code audit" rather than interleaved, because the forensic
+   conclusion shapes the severity of subsequent findings.
+
+Wait for my approval on the plan before starting any prod queries.
+
+We're starting Phase 1 Part B Area 3: Auth & educator access gate.
+
+The audit plan at docs/pilot/phase-1-audit-plan.md remains authoritative.
+Read the Area 1 and Area 2 reports (docs/pilot/phase-1-area-1-report.md,
+docs/pilot/phase-1-area-2-report.md) for context and especially for the
+"Newly observed for Area 3" subsections in each. Treat those as known
+inputs to verify, not findings to rediscover.
+
+Specifically from earlier areas:
+- Area 1 flagged: `MagicLink` rows persist indefinitely with no cleanup
+  job implied (worth checking whether expired/used links are pruned in
+  services); `Educator.confirm_token` and `Educator.verify_code` are
+  stored plaintext (defensible for short-lived single-use tokens but
+  worth a security pass).
+- Area 1 also flagged: `BookingStatusLog.changed_by` is `String(100)`
+  storing "admin email or 'system'" — worth checking how admin actions
+  are attributed in the auth/admin code.
+- Area 2 may have added more — read its newly-observed section.
+
+## Why this area matters
+
+Narrow surface, high blast radius. Auth bugs are how unauthorized
+parties get access to data or actions they shouldn't. The educator
+access system is newer code (per project memory) — newer means less
+battle-tested. The 7-day access window logic and the 6-digit
+re-verification flow are exactly the kind of code where small bugs
+have outsized consequences.
+
+## Scope
+
+In-scope files (read all in full):
+- `backend/app/api/auth.py`, `admin.py`, `educators.py`
+- Service-layer code for auth, sessions, tokens, magic links,
+  educator confirmation, and the re-verification flow
+- Pydantic schemas for the above
+- Any middleware or dependencies that enforce auth on routes
+- The educator access window logic (7-day) and the 6-digit code path
+- Frontend admin auth UI (login, session handling, logout)
+- Frontend educator confirmation/verification flow
+
+Out of scope (note in "newly observed"):
+- Service modules not related to auth (Area 4)
+- Public site outside the educator confirmation flow (Area 5)
+- Admin CMS internals beyond auth (Area 6)
+- Payment code (Area 2, already done)
+
+## What to look for
+
+**Session and token handling**
+- Are session tokens cryptographically random? Sufficient entropy?
+- Token storage: in cookies (httpOnly, Secure, SameSite settings)?
+  In localStorage (a red flag for session tokens)? In memory only?
+- Are tokens rotated on privilege escalation (e.g. when an educator
+  upgrades to verified)?
+- Expiration: is it enforced server-side, or only by client-side
+  countdown?
+- Logout: does it actually invalidate the token server-side, or just
+  clear the client?
+
+**Magic link flow**
+- Single-use enforcement: is a magic link actually one-time? Is
+  `used_at` set atomically with the access grant?
+- Expiry enforcement: is `expires_at` checked server-side on every
+  use, not just at generation?
+- Cleanup: do expired/used links ever get pruned, or do they
+  accumulate forever? (Area 1 flagged this.)
+- Token entropy: is the magic-link token long and random enough that
+  enumeration is infeasible?
+- Email delivery: are tokens ever logged on the way out (Sentry
+  breadcrumbs, application logs, request logs)?
+
+**Educator confirmation and re-verification**
+- The 6-digit code: is it rate-limited per educator? Per IP?
+  Globally? Brute force at 6 digits is 1M tries — without rate
+  limiting, a few thousand requests per second cracks it in minutes.
+- Is the 6-digit code actually 6 digits, or could it have leading
+  zeros that get stripped somewhere?
+- The 7-day access window: is the window checked on every request,
+  or only at login? If only at login, a session that started on day
+  6 might extend indefinitely.
+- Re-verification trigger: what causes re-verification to be
+  required? Is the trigger logic consistent with the security model?
+- `confirm_token` and `verify_code` plaintext storage: defensible if
+  they're short-lived and single-use, but verify that's actually the
+  case. If either could be reused or persists beyond intended
+  lifetime, the plaintext storage becomes a real finding.
+
+**Admin auth**
+- How is admin identified? A boolean flag on User? A separate model?
+  Role-based? Whatever it is, audit the consistency of enforcement.
+- `BookingStatusLog.changed_by` storing "admin email or 'system'" —
+  audit whether this attribution is actually trustworthy, or if a
+  bug could attribute an admin action to 'system' (or vice versa).
+- Admin password storage: are passwords hashed with a modern algorithm
+  (bcrypt, argon2, scrypt)? Or something brittle (MD5, SHA1, plain
+  SHA256)?
+- Admin session timeout: is there one? Idle vs absolute?
+- Are admin actions logged anywhere beyond `BookingStatusLog`?
+
+**Authorization enforcement**
+- Every route that should require auth — is it actually wired up to
+  the auth dependency? Look for routes that forgot the dependency.
+- Every route that should require admin specifically — same check.
+- Educator-only routes: are they actually gated on educator status,
+  or just on "logged in"?
+- Object-level authorization: can educator A access educator B's
+  resources by guessing/enumerating an ID?
+
+**Frontend auth**
+- Token storage on the frontend (localStorage vs cookies vs memory)
+- CSRF protection if cookies are used
+- Login form: is there protection against credential stuffing?
+- Auth state management: is there a path where a stale auth state
+  could be displayed (e.g. showing the admin UI for half a second
+  after logout)?
+
+**General security hygiene**
+- Are there any auth-related secrets hardcoded? (Phase 0 already
+  rotated, but worth re-checking now that we know how.)
+- Is HTTPS enforced on auth endpoints?
+- Are auth errors specific enough to leak info? ("Email not found"
+  vs "Invalid credentials" — the former enables enumeration.)
+- Are there debug or development-only auth bypasses that could be
+  reachable in production?
+
+## Production data access
+
+Same pattern as Area 2: surface for explicit approval before any
+prod query. Use `.env.prod-readonly` for the connection. Aggregates
+only — no row-level PII queries on `educators`, `users`, or
+`magic_links`. Specifically useful prod queries you might propose:
+
+- Counts of expired-but-not-cleaned-up magic links
+- Distribution of `MagicLink.expires_at` to confirm expiry policy
+- Counts of admin actions by `changed_by` in `BookingStatusLog`
+  (aggregate only)
+- Whether any educator confirm_tokens are older than their intended
+  lifetime
+
+Propose, wait for approval, then run.
+
+## Working style
+
+- **Batch-and-confirm** as before.
+- **Severity calibration for auth is strict.** A missing rate limit on
+  the 6-digit code is `code-quality:critical`. A magic link that can
+  be replayed is `code-quality:critical`. An overly informative auth
+  error message that enables email enumeration is
+  `code-quality:moderate`. A confusing variable name in a session
+  helper is `code-quality:nice-to-have`.
+- **Agent-friendly is rare in auth.** Anything touching token
+  generation, session handling, authorization checks, or rate
+  limiting is NOT agent-friendly. Cosmetic refactors of error
+  message wording might be. The category is "small, well-bounded,
+  no security judgment required" — most auth findings fail at least
+  one of those.
+- **Stop-the-line is most likely here of any area.** If you find:
+  - A route that should be protected but isn't
+  - A token replay vulnerability
+  - A path where authorization is missing entirely
+  - Credentials or tokens being logged in plaintext
+  - A way to escalate from educator to admin (or unauthenticated to
+    authenticated) through the API
+  ...surface immediately. We fix inline before continuing the audit.
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-3-report.md`. Same shape as previous
+reports. Add one section specific to this area:
+
+**"Auth model summary."** A clear, concise statement of how auth
+actually works in this project right now: who can authenticate,
+what session/token mechanism is used, what the authorization
+boundaries are, what state transitions an account can go through
+(unauthenticated → educator pending → educator confirmed → educator
+expired → educator re-verified, plus the admin path). This becomes
+a reference document for every future change to auth code. If the
+audit reveals that the *intended* model differs from the *actual*
+model, both should be documented with the gap called out.
+
+## Scope estimate
+
+This is the smallest of the six areas per the audit plan, but the
+risk density is the highest. Expect 1-2 hours of focused work and
+5-10 issues filed. The smaller volume estimate is appropriate because
+auth code tends to be either correct or dramatically wrong — there's
+less "convention drift" territory than in models or services. If
+you're approaching 15+ findings, either the auth surface is much
+larger than I think, or you've drifted into Area 6 admin-UI
+territory.
+
+Begin by:
+1. Reading the audit plan, the Area 1 and Area 2 reports (especially
+   newly-observed for Area 3), and the Phase 0 report's auth-relevant
+   findings if any.
+2. Mapping the actual auth surface: list every route, every middleware,
+   every dependency, every state transition. The map itself is half the
+   audit — many auth bugs are about gaps in the map.
+3. Proposing a session structure. My suggestion: build the auth model
+   summary first (read everything, produce the section that goes into
+   the report), then audit against it. The summary doubles as the
+   mental model the audit uses.
+
+Wait for my approval on the structure before starting any prod queries.
+
+---
+
+This is a Phase 1.5 detour — a single-session, single-PR fix for issue #31
+(HTML injection in notification emails). We're interrupting the Phase 1
+audit sequence because #31 is a live, exploitable vulnerability on a
+public unauthenticated endpoint that targets the admin inbox. The Area 2
+report flagged this as stop-the-line and the operational decision at
+the time was file-and-continue. We're correcting that now before
+starting Area 3.
+
+Read these first for context:
+- The full text of GitHub issue #31
+- The relevant section of docs/pilot/phase-1-area-2-report.md
+- `backend/app/services/notifications.py` end to end
+- docs/pilot/agent-friendly-criteria.md (the stop-the-line policy
+  specifically)
+
+## Goal
+
+Eliminate HTML injection from all notification emails. The exploit path
+is: an attacker POSTs an order with HTML-injected `customer_name` (or
+any other attacker-controlled field), the notification service renders
+that field into an HTML f-string template, the admin receives a
+legitimate-looking email from a trusted internal sender, and the
+injected HTML renders in their inbox — enabling phishing from a
+trusted source.
+
+The fix is to escape every attacker-controllable value before it
+enters the email body. The right way to do this is migrate the HTML
+templates to Jinja2, which auto-escapes by default. This also
+addresses the broader template-quality concern that the Area 2 report
+queued for Area 4, but we're doing it now because the security fix
+and the template migration are the same change.
+
+## Scope
+
+In-scope:
+- All HTML email templates currently constructed via f-string in
+  `backend/app/services/notifications.py`. Migrate each to a Jinja2
+  template.
+- The plumbing changes to render Jinja2 templates from the
+  notifications service (template loader, environment config, file
+  layout).
+- Tests for the notification service that specifically cover the
+  injection vector — at minimum, one test per template confirming
+  that HTML-bearing input is escaped in the rendered output.
+- Updates to any caller that needs to change due to API shifts in
+  the notification methods (probably none — the public method
+  signatures shouldn't change).
+
+Out of scope (defer to the Area 4 notifications work):
+- Refactoring the structure of the notification service itself
+  beyond what the Jinja2 migration requires.
+- Adding new notification types.
+- Changing what triggers notifications.
+- Touching the Composio Gmail wrapper or the swallowed-error pattern
+  (that's #37 and is a separate fix).
+- The `paypal_service.cancel_invoice` swallowed-exception pattern
+  flagged for Area 4.
+- Plain-text email body changes unless they also have an injection
+  vector (they probably don't — plain text doesn't render HTML —
+  but verify).
+
+If you find that the Jinja2 migration *requires* touching something
+on the out-of-scope list to be coherent, stop and tell me. Don't
+expand scope unilaterally.
+
+## Approach
+
+1. **Inventory.** Read `notifications.py` end to end and list every
+   HTML template currently rendered, every variable interpolated
+   into each template, and which of those variables are
+   attacker-controllable (originating from request bodies or other
+   untrusted sources). Show me this inventory before writing any
+   code. The list defines the surface of the fix and the surface
+   of the tests.
+
+2. **Template structure.** Propose a directory layout for the
+   Jinja2 templates (probably `backend/app/templates/email/` with
+   one `.html` file per notification, or one per template family).
+   Show me the proposal before creating files.
+
+3. **Migration.** Convert each template to Jinja2, verify
+   auto-escaping is on (it's the default for `.html` templates in
+   Jinja2's `Environment` with `autoescape=select_autoescape(['html',
+   'xml'])`), and update the calling code in `notifications.py` to
+   render via the template loader.
+
+4. **Tests.** For each template, write a test that:
+   - Renders the template with an attacker-controlled value
+     containing HTML payload (e.g. `<script>alert(1)</script>`
+     or `<a href="https://evil/">Click</a>`)
+   - Asserts the rendered output contains the escaped form
+     (`&lt;script&gt;`) and does NOT contain the raw HTML
+   - Confirms legitimate values still render correctly (sanity
+     check the migration didn't break the happy path)
+   
+   These tests are the regression gate — if anyone re-introduces
+   an injection vector later (e.g. by using `{{ var | safe }}` or
+   constructing HTML in the calling code), the tests should catch
+   it.
+
+5. **Verification.** Run the full test suite. The 99 passing
+   tests should stay passing. The new tests should pass. CI on
+   the PR should be green.
+
+## Working style
+
+- **Show inventory and proposed structure before writing code.**
+  Same show-before-act pattern as the previous sessions. The
+  inventory in particular is load-bearing — if it misses a
+  template, the fix is incomplete.
+- **Don't merge from your end.** Open the PR, link it to issue
+  #31 with `Fixes #31`, let me review and merge.
+- **PR title:** `fix: escape HTML in notification email templates
+  (closes #31)`.
+- **PR description:** Brief — explain the vulnerability, the fix
+  (Jinja2 migration), what's in scope and what's not, link to the
+  Area 2 report section that originally surfaced this.
+
+## Stop-the-line within this session
+
+If during the migration you discover *additional* injection vectors
+that weren't covered by #31 — e.g. another endpoint also reflecting
+unescaped input into email — surface immediately. Either expand
+the PR to cover them (small additional scope is fine if the fix
+is the same shape) or file a follow-up issue if the fix is
+substantially different. Tell me which you'd recommend before
+acting.
+
+## End-of-session note
+
+When the PR is up, write a 1-page note as a comment on the PR (not
+a separate file) summarizing:
+- What templates were migrated
+- What attacker-controllable fields are now escaped
+- What tests were added
+- Anything you noticed during the migration that should feed back
+  into the Area 4 notifications audit
+
+This becomes the record that the stop-the-line fix actually happened,
+and the seed for Area 4's deeper notifications work.
+
+Begin with the inventory. Wait for my approval before proposing
+the template structure.
+
+---
+
+We're starting Phase 1 Part B Area 4a: Cross-cutting services audit.
+
+The audit plan at docs/pilot/phase-1-audit-plan.md originally framed Area 4
+as one session that might split. With 20 modules in backend/app/services/,
+we're splitting it into three: 4a (cross-cutting wrappers, this session),
+4c (systematic swallowed-exceptions sweep across all services), then 4b
+(domain pipelines). Order: 4a → 4c → 4b. The 4a findings shape what 4c
+looks for; both shape what 4b finds.
+
+Read these first for context:
+- The audit plan
+- The Area 1, 2, and 3 reports for newly-observed items targeted at Area 4
+- Issue #8 (swallowed exceptions sweep) — explicitly NOT for this session,
+  but the "newly observed" items in Area 2's report flag specific
+  composio_client and paypal_service swallow patterns. Note them when
+  encountered but file them in 4c, not 4a.
+
+## Why this area matters
+
+Cross-cutting services are the lower-level wrappers that domain pipelines
+call into: LLM clients, translation, email, storage, generic schedulers.
+Their failure modes propagate upward — a Composio Gmail wrapper that
+swallows errors invisibly creates the customer-stranding risk Area 2
+identified (issue #37). The same pattern likely repeats for LLM and
+DeepL wrappers. Auditing the wrappers first means the domain pipeline
+audit (4b) can assume a clear picture of how the underlying services
+behave.
+
+This area is also where the project's external-vendor coupling lives:
+Anthropic, OpenAI, DeepL, Composio Gmail, DO Spaces. The audit should
+produce a clear picture of what depends on what, what fails how, and
+what would happen if each vendor had an outage.
+
+## Scope
+
+In-scope files: the cross-cutting wrappers in `backend/app/services/`.
+Specifically the modules that wrap external services or provide generic
+infrastructure used by other services. Likely candidates (verify by
+reading, not by guessing):
+- LLM clients: Anthropic wrapper, OpenAI wrapper, any base/abstract LLM
+  client
+- Translation: DeepL client
+- Email: Composio Gmail wrapper
+- Storage: DO Spaces client
+- Any scheduler / background-task / queue plumbing
+- Any retry / rate-limiting / circuit-breaker utilities
+- Any generic HTTP client base class
+
+Out of scope for this session:
+- Domain pipelines (edu, articles, media generation, watermarking,
+  NotebookLM CLI) — those are 4b
+- Swallowed-exceptions analysis — that's 4c (note instances but don't
+  file them here)
+- API routers (audited in previous areas)
+- Models, schemas, frontend (audited or scheduled for later areas)
+
+If you find a module that's hard to classify as "cross-cutting wrapper"
+vs "domain pipeline," tell me and we'll decide together rather than
+have you choose unilaterally.
+
+## Map the surface first
+
+Before auditing, produce a service-module inventory:
+1. List every module in `backend/app/services/` with one-line description
+2. Classify each as cross-cutting (4a scope), domain pipeline (4b scope),
+   or ambiguous (decision needed)
+3. For the cross-cutting modules, sketch the dependency graph: which
+   services call which others, and which external vendors each touches
+4. Flag any module that's imported by 4+ other services — those are the
+   highest-leverage audit targets because their bugs propagate widely
+
+Show me the inventory and dependency sketch before starting the audit
+itself. The classification matters — getting it wrong shifts work between
+4a and 4b. We'll lock the split together before any in-depth reading.
+
+## What to look for in cross-cutting wrappers
+
+**Vendor coupling and failure modes**
+- What does each wrapper do when the vendor returns an error? 4xx vs
+  5xx vs timeout vs connection refused — handled differently or
+  uniformly?
+- Are retries implemented? On what (idempotent ops only?) and with
+  what backoff? Bounded?
+- Is there a circuit-breaker pattern, or does a vendor outage produce
+  unbounded retries per request?
+- Are timeouts set on every external call? Default timeouts (often
+  none or absurdly long) versus explicit ones?
+- Are vendor responses validated before being returned to the caller,
+  or trusted? Especially relevant for LLM clients — what happens if
+  the model returns malformed JSON, empty output, or a refusal?
+
+**Configuration and secrets**
+- How is each vendor's API key / credential loaded? Env vars only?
+  Hardcoded fallbacks? (Phase 0 found a lot of these — verify none
+  remain in services.)
+- Are credentials passed correctly into the SDK or HTTP client? Any
+  paths where the key is logged in plaintext (request logging,
+  Sentry breadcrumbs, application logs)?
+- Is there configuration drift between dev/test/prod (e.g. test
+  hitting a real vendor by accident)?
+
+**Cost and rate-limit awareness**
+- Do LLM wrappers track token usage? Anywhere?
+- Are rate limits respected, or is throttling deferred to the vendor
+  to enforce by 429-ing?
+- Is there any usage-cap or budget-cap logic, or could a runaway loop
+  burn unbounded API spend?
+- Specifically for the Anthropic wrapper: which model is hardcoded?
+  Is it pinned to a specific version, or "latest"? (Pinning matters
+  for reproducibility; "latest" makes test results drift.)
+
+**Concurrency**
+- Async vs sync — consistent within each wrapper? Mixed in awkward
+  ways?
+- Any module creating its own event loop (the pattern Area 2 flagged
+  in the PayPal webhook)?
+- Any blocking calls inside async functions that would defeat
+  concurrency?
+- Connection pooling for HTTP clients — set up correctly, or one
+  client per call?
+
+**Observability**
+- Are external calls logged anywhere? Sentry breadcrumbs, structured
+  logs, application logs?
+- Are failures surfaced to Sentry as exceptions, as captured-handled
+  exceptions, or invisibly?
+- Is there latency tracking? Any way to answer "is DeepL slow today"
+  from a dashboard?
+
+**Inter-service consistency**
+- Do all wrappers expose a similar API shape (e.g. raise on error vs
+  return result objects)? Or does each wrapper do its own thing?
+- Are exceptions normalized to project-specific exception types, or
+  do vendor SDK exceptions leak through to callers?
+- Same question for retry/timeout behavior — consistent across
+  wrappers or per-wrapper improvisation?
+
+**Things that came up in earlier areas**
+- Composio Gmail wrapper: Area 2's #37 (swallowed notification
+  failures) traces here. Area 2's "newly observed" said
+  composio_client.send_email is the boundary that may swallow Gmail
+  API errors. Verify what it actually does. The swallowed-exceptions
+  *instance* is a 4c finding, but the *behavior* of the wrapper — does
+  it raise on failure, return a boolean, return None? — is a 4a
+  finding because it shapes how every caller should integrate with it.
+- Project memory notes that long research docs (6000+ words) cause LLMs
+  to ignore constraints. That's a domain-pipeline workaround (4b
+  territory), but if it surfaces a missing capability in the LLM
+  wrapper (e.g. no chunking utility) that's a 4a finding.
+
+## Working style
+
+- **Batch-and-confirm** as in previous sessions.
+- **Severity calibration:** A wrapper that silently swallows vendor
+  errors is critical (it creates the invisible-failure class Area 2
+  identified). A wrapper without timeouts is critical (it creates
+  unbounded-blocking risk). A wrapper hardcoding a model version that's
+  about to be deprecated is moderate. Inconsistent exception types
+  across wrappers is moderate. Variable-naming or formatting issues
+  are nice-to-have.
+- **Agent-friendly calibration:** Wrappers handle external boundaries
+  and error behavior. Most changes here require judgment about
+  contracts and failure modes — NOT agent-friendly. Cosmetic refactors,
+  type annotations, doc updates: probably agent-friendly. A
+  contained, well-specified migration like "swap deprecated SDK call
+  X for replacement Y" might qualify, but the assessment must pass the
+  six-checkbox gate honestly.
+- **Stop-the-line:** If you find a wrapper that's logging vendor
+  credentials in plaintext, or has a code path that could exfiltrate
+  user data to the wrong vendor, or has a hardcoded test credential
+  reaching prod, surface immediately. We fix inline.
+- **Token usage:** This session has access to the $100 promotional
+  credit pool. If you hit subscription cap during this session,
+  continue rather than stop — the overflow lands on extra-usage credit
+  and we want to be thorough on the wrapper audit because it shapes
+  4b's scope. But "be thorough" is not "expand scope" — stay in
+  cross-cutting services.
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-4a-report.md`. Same shape as previous
+reports.
+
+Add two area-specific sections:
+
+**"Service surface map."** The inventory and dependency sketch from
+the start, refined by what the audit found. This becomes the reference
+for 4b and 4c. Specifically: every cross-cutting module, its external
+dependencies, and which downstream services depend on it. A diagram
+or table, not prose.
+
+**"Vendor failure-mode summary."** For each external vendor, a clear
+statement of: what the wrapper does on vendor success, what it does
+on vendor error, what it does on vendor timeout, whether the failure
+is visible upstream (raises) or invisible (swallowed/None/False), and
+what would happen system-wide if the vendor were down for an hour.
+This becomes a load-bearing reference for any future incident or
+reliability conversation.
+
+## Scope estimate
+
+This is the first of three sessions for Area 4. Expect 1.5-2 hours of
+focused work and 8-12 issues filed for 4a specifically. The 4c session
+will likely add 10-20 more issues (swallowed exceptions are pervasive
+per Area 2's signal). 4b is the largest with 15-25 expected.
+
+If you're approaching 20+ findings in 4a alone, either the wrappers
+are in worse shape than expected (surface and we'll regroup) or you've
+drifted into domain-pipeline territory (re-scope).
+
+Begin with the service-module inventory and dependency sketch. Wait
+for my approval on the cross-cutting vs domain classification before
+starting the in-depth audit.
+
+---
+
+We're starting Phase 1 Part B Area 4c: Swallowed-exceptions sweep across
+backend/app/services/.
+
+This is the second of three Area 4 sessions. 4a audited cross-cutting
+wrappers and produced the service surface map. 4c does a focused
+systematic pattern walk for exception-swallowing across all 20 service
+modules. 4b (domain pipelines) follows.
+
+Read these first:
+- docs/pilot/phase-1-area-4a-report.md, especially the "Service surface
+  map" and "Process notes for the next area (4c)" sections — both are
+  load-bearing for this session
+- Issue #8 (the cross-cutting swallowed-exceptions sweep originally
+  filed in Phase 0)
+- Issues #67, #70, #74, #77 — the wrapper-contract findings from 4a
+  that explain the most consequential swallow patterns
+- The "newly observed for 4c" subsections of every prior area report
+  (1, 2, 3, 4a) — these contain specific line-level pointers
+
+## Why this session is different
+
+This is a systematic sweep, not an audit. The output is a single
+comprehensive comment on issue #8, structured as a catalogue, with
+line-level references to every exception-swallow site in the services
+layer. Plus targeted issues for swallows that warrant standalone
+attention (judgment call: if it's structurally novel or particularly
+severe, file separately and reference #8 from it).
+
+The 4a report explicitly framed how to structure the output: don't
+enumerate `except Exception: pass` as if instances are independent.
+Distinguish:
+
+(a) Wrapper-induced swallows — sites where a caller ignores a return
+    value or exception because the wrapper's contract is broken or
+    unclear. These will be largely resolved when #67 (composio
+    contract) and #74 (mailing_list callers) are fixed. Catalogue
+    them, reference the parent issue, do NOT file individual issues
+    for each.
+
+(b) Genuinely independent swallows — sites where the swallow is a
+    local decision, unrelated to wrapper contracts. These deserve
+    individual analysis: is the swallow intentional (retry-friendly
+    transient error, fallback that's actually correct)? Is it
+    actively masking a bug? File issues for the active-masking ones;
+    catalogue the rest with rationale.
+
+(c) Pattern variants — the LOC/Wikimedia `except Exception: break`
+    crawler pattern is different from the `except Exception: pass`
+    silent swallow, which is different from the `except Exception:
+    return None` fallback pattern, which is different from the
+    `except (SpecificError,): log.error(...)` narrow swallow. The
+    catalogue should distinguish these.
+
+## Scope
+
+In-scope: every file in `backend/app/services/` (all 20 modules).
+Specifically:
+- Every `try:` block with an `except:` clause
+- Every place a function returns None, False, or a sentinel when
+  upstream behavior failed
+- Every place a vendor-SDK exception type is caught and converted to
+  a non-exception return
+- The five separate `anthropic.Anthropic()` instantiation sites
+  (per the 4a findings) — each is a swallow surface in the sense
+  that no centralized error handling exists
+
+Out of scope:
+- Router files (`backend/app/api/`) — Areas 2 and 3 covered the
+  router-side swallow patterns; don't re-audit
+- Models, schemas, frontend — not this area's concern
+- Re-auditing wrapper contracts — 4a already produced the wrapper
+  analysis; this session uses those findings as inputs
+
+If you find a swallow in a non-services file while tracing a service
+call upward, note it but don't file. Cross-area reach is what the
+"newly observed" sections are for.
+
+## How to walk the surface
+
+The 4a report recommended this order, which I'm endorsing:
+
+1. **The 7 cross-cutting modules first** (composio_client,
+   notifications, translation, image_storage, loc, wikimedia,
+   mailing_list). These are small, bounded, and the 4a audit already
+   identified most of the swallow sites. The catalogue work is
+   mostly transcribing the 4a observations into structured form,
+   plus any line-level sites 4a noted in passing but didn't filed.
+
+2. **The 7 Anthropic-using modules next** (article_generation,
+   edu_material_generation, edu_research, research, research_summary,
+   suggestion_generation, image_prompt, media_scoring,
+   series_sections — that's actually 9 modules; verify). These
+   have the most uncaught `messages.create` calls per 4a's finding.
+   Most "swallows" here are likely the inverse pattern — exceptions
+   propagating uncaught, which is a different problem from
+   swallowing but worth catalogueing alongside for the same #8 ticket.
+
+3. **The remaining domain services** (paypal, availability, pricing,
+   educator_service, plus whatever else exists). Lighter pass —
+   Areas 2 and 3 already touched some of these.
+
+Suggest a session-internal structure: do step 1 in one batch (file
+nothing yet, just catalogue), then step 2, then step 3, then synthesize
+the catalogue at the end. The synthesis at the end is where the issue
+filing happens — looking at the full pattern lets you decide which
+warrant standalone issues vs which roll up to #8.
+
+## The catalogue structure
+
+The output that lands on issue #8 as a comment should be structured.
+Suggested shape:
+
+The tables are illustrative; adjust as makes sense. The principle is
+that the structure makes it scannable. A future reader (you, an agent,
+me) should be able to find "all the swallows in image_storage" or
+"all the wrapper-induced swallows" without re-reading the catalogue.
+
+## What to file as separate issues
+
+Restrict separate filings to:
+
+1. **Active bug-masking swallows.** A swallow that hides a real
+   failure mode that's affecting production today. (The
+   `image_storage.generate_thumbnail` returning None on Pillow
+   failure, where the caller ignores it and the UI shows a missing
+   thumbnail with no error trail — that's the kind of thing that
+   might warrant filing.)
+
+2. **Structurally novel patterns** that don't fit any of the
+   categories above and need their own analysis. Probably rare.
+
+3. **Already-named items from prior areas** that need a proper
+   issue, not just a catalogue entry. Specifically: the
+   `paypal_service.cancel_invoice` swallow at orders.py:495-498
+   that Area 2 flagged. It's in a router not a service, so it's
+   actually out of strict scope for 4c, but Area 2's newly-observed
+   list explicitly handed it to 4c. Decide whether to file (with a
+   note about the scope edge) or punt back to Area 2's backlog.
+
+Everything else lives in the catalogue. The intent is to make #8
+itself the primary deliverable — a single comprehensive reference —
+rather than a scattering of 30+ tiny issues.
+
+## Working style
+
+- **No batch-and-confirm for catalogue work.** This is mechanical
+  transcription against a clear structure. Just produce the
+  catalogue.
+
+- **DO batch-and-confirm for separate issue filings.** When you've
+  finished the synthesis and identified candidates for standalone
+  issues, propose them as a single batch with titles, severities,
+  and rationales. Wait for approval before filing.
+
+- **Severity calibration:** A swallow that masks a live production
+  failure mode is moderate to critical depending on what's being
+  masked. A swallow that's an intentional fallback for a transient
+  error is nice-to-have or not filed at all. A pattern variant
+  observation is a catalogue entry, not an issue.
+
+- **Agent-friendly calibration:** Mechanical "replace `except
+  Exception: pass` with `except Exception: log.exception(...);
+  raise`" changes might qualify if the scope is single-site and the
+  semantic change is clearly correct. Cross-cutting normalizations
+  (introducing project-specific exception types, say) are not
+  agent-friendly. Use the 6-criteria gate honestly.
+
+- **Stop-the-line:** Unlikely in a sweep, but if you find a swallow
+  that's hiding active data loss or active security exposure (e.g.
+  a swallow around a credential rotation that means rotations are
+  silently failing), surface immediately.
+
+- **Token usage:** Same as 4a — the $100 promotional credit covers
+  overflow. Be thorough; the catalogue is most valuable when it's
+  complete. But "thorough" means "every swallow site in services/,"
+  not "expand to routers/models/frontend."
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-4c-report.md`. Shorter than the
+previous reports because most of the substance is in the issue #8
+catalogue comment.
+
+Required sections:
+- Executive summary (the catalogue's headline numbers)
+- By-the-numbers (counts: total swallow sites found, by category,
+  separately-filed issues)
+- Catalogue location reference (link to the #8 comment)
+- What's filed separately and why
+- Methodological notes — specifically: which patterns turned out to
+  be more or less common than expected, calibration data for the
+  4b prompt
+- Newly observed for 4b
+- What surprised you
+
+You don't need a "vendor failure-mode summary" or "service surface
+map" — those are 4a's contributions and don't change here.
+
+## Scope estimate
+
+Per 4a's estimate, expect 10-20 swallow sites total catalogued and
+2-5 standalone issues filed. Time: 1.5-2 hours. The catalogue itself
+is the bulk of the work, not the issue filing.
+
+If you're approaching 30+ catalogue entries, the services layer is
+in worse shape than expected — surface and we'll regroup. If you're
+approaching 10+ separate issues, you're filing too granularly — most
+should be rolling up to #8.
+
+Begin by:
+1. Re-reading the 4a report's process notes section for 4c
+2. Confirming the order of the sweep (cross-cutting first, then LLM,
+   then remaining)
+3. Proposing the catalogue table structure (refinement of the
+   sketch above)
+4. Then proceeding through the sweep
+
+Wait for my approval on the catalogue structure before starting the
+sweep itself. Once approved, no further check-ins until synthesis —
+this should be a focused pass.
+
+---
+
+We're starting Phase 1 Part B Area 4b-1: Edu pipeline audit.
+
+This is the last of three Area 4 sessions, split into two:
+- 4b-1 (this session): edu pipeline — research → study guides → slides
+  → watermarking → media library
+- 4b-2 (next session): article pipeline — suggestions → research →
+  article writing → translation → publication
+
+4a produced the service surface map and vendor failure-mode summary.
+4c produced the swallowed-exceptions catalogue and the wrapper-contract
+analysis. Both are inputs to this session, not work to redo.
+
+Read these first:
+- docs/pilot/phase-1-area-4a-report.md, especially the service surface
+  map (the 4a/4b split is locked there) and vendor failure-mode summary
+- docs/pilot/phase-1-area-4c-report.md, especially the methodological
+  notes on what 4b should pick up
+- Issues #67, #70, #74, #76, #77, #83, #84, #85 — the wrapper-contract
+  and pattern-standardization cluster from 4a and 4c
+- The "newly observed for 4b" subsections of every prior area report
+
+## Why this area matters
+
+The edu pipeline is the project's most ambitious feature: it takes a
+suggested edu material, runs deep research, drafts study guides and
+slides, watermarks them, and pushes them through the media library.
+It's also where the LLM orchestration gets most complex — multiple
+sequential prompts, large outputs, the long-research-doc workaround
+mentioned in project memory, and the most LLM-call-dense module in
+the codebase (`edu_material_generation` with 4 separate
+`messages.create` calls).
+
+If the wrapper-contract work in 4a/4c is the structural diagnosis,
+this audit is the domain diagnosis: where does the edu pipeline's
+specific orchestration fall down, what's its actual failure shape,
+and how would a fully autonomous "produce N edu materials per week"
+flow break in practice.
+
+## Scope
+
+In-scope modules (the edu cluster):
+- `backend/app/services/edu_research.py`
+- `backend/app/services/edu_material_generation.py`
+- The watermarking helpers (`watermark_infographic`,
+  `watermark_slides`) — locate them; they may be in `image_storage.py`
+  or in a separate watermarking module
+- `backend/app/services/media_scoring.py` (used by media library;
+  it's used by the edu pipeline downstream)
+- The edu router (`backend/app/api/edu.py`) — the orchestration
+  entry points
+- Any edu-specific Pydantic schemas
+- Cross-references into models touched by the pipeline (EduMaterial,
+  EduResearch, EduSuggestion, MediaCandidate)
+
+Explicitly NOT in scope this session (4b-2 territory):
+- `article_generation.py`
+- `research.py` (blog research, distinct from `edu_research.py`)
+- `research_summary.py`
+- `suggestion_generation.py`
+- `image_prompt.py`
+- `series_sections.py`
+- `translation.py` (already audited 4a)
+
+If you find a module that's hard to classify as edu vs article (e.g.
+`media_scoring.py` is used by both), audit it here and note that 4b-2
+should reference rather than re-audit it.
+
+## What to look for
+
+**LLM orchestration**
+- Multi-step prompt chains: what fails between steps? If step 2
+  fails after step 1 succeeded, is step 1's output recoverable
+  or lost?
+- Token-budget choices: `max_tokens` per call, thinking budget
+  if set, whether they're consistent within the pipeline
+- Prompt construction: where does user input enter the prompt?
+  Is there any injection risk into the LLM prompts themselves
+  (a different problem from HTML injection — LLM prompt injection
+  via attacker-controlled fields)?
+- The long-research-doc workaround mentioned in project memory:
+  what is it, where does it live, and is it documented anywhere
+  beyond the implementation?
+- Defensive parsing: per 4c's findings, `edu_material_generation.
+  _parse_outline_response` is the template. Compare the rest of
+  the pipeline against it.
+
+**Pipeline state and recovery**
+- If the pipeline runs for 5 minutes and fails at minute 4, what's
+  the state? Half-finished EduResearch row? Orphan MediaCandidate
+  rows? A study guide draft with no slides?
+- Is there a "resume from step N" path, or does failure require
+  starting over?
+- The `stats["errors"].append` pattern from 4c — does the edu
+  pipeline use it, or does it fail-fast on first error?
+- Concurrency: can two edu material generations run in parallel?
+  If yes, do they share any state that could conflict?
+
+**Watermarking**
+- Watermarking lives between LLM-produced artifacts and the media
+  library. What happens if watermarking fails? Is the unwatermarked
+  artifact discarded, kept, or stored unwatermarked?
+- PyMuPDF / Pillow failure modes: per 4a, the `MAX_IMAGE_PIXELS`
+  is relaxed (filed as #81). What other ways can watermarking
+  break, and does the pipeline handle them?
+- Is the watermarking step idempotent? Re-running on an already-
+  watermarked artifact — does it double-watermark, no-op, or
+  silently corrupt?
+
+**Media library integration**
+- MediaCandidate creation: when does it happen in the pipeline?
+  What if the candidate is created but never approved?
+- The `media_scoring.py:117` broad catch (now filed as #85) —
+  what's the blast radius when scoring aborts mid-run?
+- LOC + Wikimedia crawlers (filed under #73): does the edu
+  pipeline call them synchronously, async, or queue them?
+
+**Outputs and side effects**
+- DB writes: which model fields get updated when, and in what
+  transaction scope?
+- File outputs: where do study guides and slides land
+  (DO Spaces? local disk? attached to DB rows)?
+- Notifications: does the edu pipeline notify anyone on completion
+  or failure? (Likely no, given 4a found `request_followup_email`
+  uncalled — there may be a parallel gap.)
+
+**Cost awareness**
+- The edu pipeline is the most LLM-spending-heavy flow in the
+  codebase. A full edu material generation run: how many calls,
+  to which models, with what token budgets? Estimate the cost per
+  run from the code (not from prod data — this is code-reading).
+- Are there guards against runaway loops or accidental
+  re-triggering?
+
+**Things from earlier areas to verify**
+- 4a flagged that `edu_material_generation` has the most LLM
+  calls of any module. Verify the call count, and document the
+  call graph.
+- 4a flagged `EduMaterial.material_type` is plain `String(20)`
+  with no enum. Confirm the canonical set of expected values
+  during this audit.
+- 4a's "newly observed" flagged `EduMaterial`'s two optional FKs
+  (research_id to edu_research, blog_research_id to research) as
+  modeling a discriminated union without a discriminator column.
+  Confirm whether the service-layer code can produce a row with
+  neither populated.
+
+## Working style
+
+- **Batch-and-confirm** as in all previous audit sessions.
+- **Severity calibration:** A pipeline-state-corruption bug
+  (half-completed run leaves DB in inconsistent state) is critical.
+  An unbounded-cost runaway risk is critical. A missing recovery
+  path that forces start-over on transient failures is moderate.
+  Inconsistent token budgets that produce minor quality drift are
+  nice-to-have.
+- **Agent-friendly calibration:** Domain-pipeline changes are
+  rarely agent-friendly because they typically require understanding
+  the pipeline's intent. Cosmetic refactors and single-file
+  prompt-cleanup tasks might qualify. Apply the six-checkbox gate
+  honestly.
+- **Stop-the-line:** If you find a pipeline bug that's actively
+  corrupting data in production (e.g. EduResearch rows are getting
+  silently overwritten), or a path where attacker-controlled input
+  reaches LLM prompts in a way that could exfiltrate prompt
+  context, surface immediately.
+- **Don't re-audit wrapper concerns.** Exception handling,
+  swallow patterns, and wrapper contracts are 4a/4c territory.
+  This session is for orchestration, state, and domain logic.
+
+## Production data access
+
+Following the pattern from previous areas: surface for explicit
+approval before any prod query. Aggregates only — no PII or
+content from `edu_research`, `edu_material` body fields. Useful
+aggregate queries might include: count of edu_material rows by
+status, count of orphan EduResearch rows (research without
+material), distribution of EduMaterial.material_type values
+(to confirm the canonical set), count of edu materials with
+blog_research_id vs research_id vs both vs neither.
+
+## NEW for this session: fix-ordering analysis
+
+This is a new section relative to previous reports. We now have
+~76 open issues across Phase 1 and a real question of what to
+fix first. The 4b-1 audit is the right place to introduce
+fix-ordering output, because the edu pipeline has clear
+dependencies (LLM wrapper before pipeline cleanup before
+watermarking improvements) that exemplify the kind of structure
+the rest of the backlog likely has.
+
+In the end-of-session report, add a section called **"Fix
+ordering for edu pipeline."** It should:
+
+1. List every open issue currently filed that touches the edu
+   pipeline directly (audit-related or otherwise — pull from
+   the full GitHub issues list)
+2. Group them by what they unblock and what unblocks them
+3. Propose a sequence: which to fix first, which can run in
+   parallel, which are blocked on others
+4. Highlight any issue where fixing it changes the scope of
+   another issue (the 4c-flagged "#76 first means #85's fix
+   shrinks" pattern is the template)
+5. Flag dependencies that cross domains — e.g. the edu
+   pipeline depends on Anthropic wrapper work (#76) which is
+   shared with the article pipeline; whoever fixes #76 affects
+   both 4b-1 and 4b-2 cleanup
+
+This section is the proof-of-concept for the Phase 1 final
+report's fix-sequence framework. If it lands well, 4b-2 and the
+final report will inherit the format.
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-4b-1-report.md`. Same shape as
+previous reports.
+
+Required sections:
+- Executive summary
+- By-the-numbers
+- What was audited
+- Item-by-item findings
+- Stop-the-line discussion
+- What's filed vs deferred
+- Newly observed (for 4b-2, and any other areas)
+- What surprised me
+- Process notes for the next session
+- **NEW: Fix ordering for edu pipeline** (per above)
+
+The fix-ordering section is the most novel deliverable from this
+session. Don't shortcut it.
+
+## Scope estimate
+
+The edu pipeline is the more complex of the two domain clusters.
+Expect 2-2.5 hours of focused work and 8-12 issues filed. The
+upper end of that range is more likely than the lower, given the
+pipeline's complexity. If you're approaching 20+ findings, you've
+probably drifted into article-pipeline or wrapper-redo territory
+— stop and re-scope.
+
+Begin by:
+1. Reading the 4a and 4c reports' relevant sections
+2. Producing the edu-pipeline call graph (which modules call
+   which, in what order, with what data flowing through)
+3. Confirming the in-scope module list against the actual
+   directory (the watermarking helpers' location especially)
+4. Proposing a session structure (probably: call-graph first,
+   then per-stage audit walking the pipeline from research →
+   slides, then state/recovery analysis, then fix-ordering)
+
+Wait for my approval on the call-graph and structure before
+starting the per-stage audit.
+
+---
+
+We're starting Phase 1 Part B Area 4b-2: Article pipeline audit.
+
+This is the final Area 4 session. 4a produced the service surface map
+and vendor failure-mode summary. 4c produced the swallowed-exceptions
+catalogue. 4b-1 audited the edu pipeline and produced the first
+fix-ordering analysis. All three are inputs to this session.
+
+Read these first:
+- docs/pilot/phase-1-area-4a-report.md (service surface map)
+- docs/pilot/phase-1-area-4c-report.md (swallow catalogue)
+- docs/pilot/phase-1-area-4b-1-report.md, especially:
+  - The "Newly observed for 4b-2" subsection (specific items to verify)
+  - The fix-ordering format (this session inherits it)
+- Issues #76, #77, #78, #68, #8 (shared foundations with edu pipeline)
+- Issues #87, #88 from 4b-1 (the parallel findings to verify in article
+  pipeline)
+
+## Scope
+
+In-scope modules (the article cluster):
+- `backend/app/services/article_generation.py`
+- `backend/app/services/research.py` (blog research; distinct from
+  `edu_research.py` per 4b-1)
+- `backend/app/services/research_summary.py`
+- `backend/app/services/suggestion_generation.py`
+- `backend/app/services/image_prompt.py`
+- `backend/app/services/series_sections.py`
+- The article router(s) — locate via 4a's surface map, likely in
+  `dashboard.py` per 4a's listing
+- Article-related Pydantic schemas
+- Cross-references into models touched by the pipeline (Article,
+  ArticleSuggestion, Research, Tag, Category)
+
+Explicitly NOT in scope:
+- Edu pipeline modules (4b-1 done)
+- `media_scoring.py` (4a/4c done; confirmed not in edu use; verify
+  whether article pipeline uses it)
+- `translation.py` (4a done) — but verify how the article pipeline
+  *calls* translation, since blog articles get translated and that
+  integration point is article-pipeline territory
+- Wrapper/exception concerns (4a/4c territory)
+
+## What 4b-1 told us to verify
+
+4b-1's "newly observed for 4b-2" was specific. Pre-load these as the
+investigation backbone:
+
+1. **Title-matching bug in blog research upload.** `edu_research.py`
+   `upload_edu_research` uses a substring title-match over all
+   suggestions and ignores the `REF:` line that the prompt generator
+   emits. Filed as #87. Does `research.py`'s upload endpoint have the
+   same shape? Same `REF:` mechanism designed-but-unused?
+
+2. **Silent overwrite in blog research upload.** `upload_edu_research`
+   silently overwrites existing research content and never resets
+   `status` from `APPROVED`. Filed as #88. Same question for the blog
+   research upload path.
+
+3. **`_generate_references_section` duplication.** The function is
+   duplicated verbatim between `edu_research.py` and `research.py`.
+   4b-1 said: 4b-2 should consider filing this as a DRY finding.
+   Confirm the duplication and decide.
+
+4. **Regeneration overwrite parallel.** 4b-1's headline finding was
+   #91: edu material generation has no regeneration guard. Does
+   article generation have the same shape? `generate_article` /
+   regenerate paths — what happens to an APPROVED, published article
+   if regeneration is triggered?
+
+5. **`suggestion_generation.py` `StopIteration` risk.** 4c catalogued
+   `next(b for b in message.content if b.type == "text")` as a
+   `StopIteration` risk in this module. 4b-2 folds it into the #77
+   work — confirm it exists, reference #77, don't file separately.
+
+6. **`image_prompt.py` orphan check.** 4a noted this module has no
+   detected callers in services/ or api/. 4b-2 should verify
+   whether it's invoked from a script outside `backend/app/`, or
+   it's dead code. If dead, file as a #96-style cleanup finding.
+
+## What else to look for (article-pipeline-specific)
+
+**Article lifecycle**
+- Suggestion → research → article generation → translation →
+  publication. Where are the transition gates? Status field on
+  Article — what are the valid states and transitions?
+- Translation integration: when does an article get translated?
+  Is it triggered manually or as part of the generation flow? What
+  fails if DeepL is unavailable mid-flow?
+- Publication: does generation set a `published` state, or does that
+  require explicit approval? Same `status` confusion as #24?
+
+**LLM orchestration (specific to article generation)**
+- Article generation is the heaviest non-edu LLM flow. Walk the
+  call chain: suggestion → research → outline → article → summary?
+- Token budgets across the chain — consistent? Sized appropriately
+  for blog-length content (probably longer than edu-grade-band
+  guides)?
+- The "long research docs cause LLMs to ignore constraints" workaround
+  from project memory: where does it live? Is it the same workaround
+  4b-1 hinted at, or different?
+
+**Series and sections**
+- `series_sections.py` is unique to article pipeline. What does it
+  do? Multi-part articles? Sectioning logic that splits long content?
+- Are series internally consistent (does part 2 know about part 1's
+  context)?
+
+**Image prompts**
+- If `image_prompt.py` is alive: how does its output get used? Is
+  it fed into Gemini Image Generation Pro per project memory?
+- If dead: file the cleanup.
+
+**Article ↔ research linkage**
+- Article model has a `research_id`. Same XOR question as edu? Can
+  an article exist without research? Without an approved research?
+- 4b-1 found `EduMaterial`'s discriminated union (#95). Does Article
+  have an analogous undisciplined polymorphism?
+
+**Prompt injection check**
+- 4b-1 found the edu pipeline fully admin-gated, no injection
+  surface. Verify the article pipeline is the same shape. If any
+  article endpoint takes public/educator input that reaches an LLM
+  prompt, that's a different risk category.
+
+**Things from earlier areas to verify**
+- The five separate `anthropic.Anthropic()` instances 4a flagged —
+  most of them live in article-pipeline modules. Confirm and reference
+  #76; don't re-file.
+- The `_get_client` import-from-private-module pattern that
+  `suggestion_generation` and `edu_material_generation` both use.
+  Edu side documented in 4a; verify suggestion_generation's usage.
+
+## Working style
+
+- **Batch-and-confirm** as always.
+- **Severity calibration:** Same standards as 4b-1. A live overwrite
+  of published content is critical. Lifecycle bugs that corrupt
+  state are critical. Missing recovery is moderate. Inconsistent
+  patterns are nice-to-have.
+- **Agent-friendly:** Same standards. Domain-pipeline changes
+  rarely qualify unless they're cosmetic or single-file scope.
+- **Stop-the-line:** Same triggers as 4b-1.
+- **Don't re-audit wrapper concerns.** 4a/4c covered them.
+- **Don't re-file edu pipeline findings.** Reference them when
+  patterns parallel; don't duplicate.
+
+## Production data access
+
+Same pattern. Surface for explicit approval before any prod query.
+Aggregates only — no article content, no PII.
+
+Useful queries likely include: count of articles by status, count
+of articles with research_id null/populated, count of orphan
+Research rows (research without article), distribution of
+Article.translated state if such a field exists, count of articles
+per series if series have a table or FK structure.
+
+Run them early — 4b-1's experience was that prod aggregates
+recalibrated three severities.
+
+## Fix-ordering analysis (continued from 4b-1)
+
+This session produces the **second** fix-ordering analysis. The
+format is established in 4b-1's report. Apply it to:
+
+1. Issues filed this session that touch the article pipeline
+2. Pre-existing issues that touch the article pipeline (per the
+   inputs list above plus anything else relevant)
+3. The shared foundations (#76, #77, #78, #68) — note these the
+   same way 4b-1 did, as cross-domain, scheduled once
+
+End the report with a brief section called **"Toward a global fix
+ordering"** — a half-page sketch of how this session's ordering
+and 4b-1's ordering compose into a single backlog sequence for
+the eventual Phase 1 final report. Don't try to produce the
+complete global sequence yet — just identify where the two
+pipeline orderings interact, where they're independent, and where
+the shared foundations slot in.
+
+The intent: the Phase 1 final report will produce the full global
+ordering, but it'll have a working composition pattern to inherit
+from this session.
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-4b-2-report.md`. Same shape as
+4b-1's report. Required sections:
+
+- Executive summary
+- By-the-numbers
+- What was audited (with article pipeline call graph)
+- Item-by-item findings
+- Stop-the-line discussion
+- What's filed vs deferred
+- Newly observed (for whichever areas remain, plus Phase 1 final)
+- What surprised me
+- Process notes for the Phase 1 final report
+- Fix ordering for article pipeline
+- Toward a global fix ordering (the new bridge section)
+
+## Scope estimate
+
+Smaller than 4b-1, because much of the foundational work is done.
+Expect 1.5-2 hours and 6-10 issues filed. Some of the article
+pipeline's findings will mirror 4b-1's — reference them via the
+4b-1 issue numbers rather than re-filing. If the article pipeline
+mirrors edu more closely than expected, the count drops further.
+If it has its own surprises (series logic, translation integration),
+the count rises.
+
+Begin by:
+1. Reading the inputs above
+2. Producing the article-pipeline call graph (same approach as
+   4b-1's five-flow map)
+3. Verifying the six items from 4b-1's "newly observed for 4b-2"
+   list — quick spot-checks, not deep audits
+4. Proposing a session structure
+
+Wait for my approval on the call graph and the spot-check results
+before starting the per-stage audit.
+
+---
+
+We're starting Phase 1 Part B Area 5: Frontend public site.
+
+Area 4 (the services layer) is complete: 4a/4b-1/4b-2/4c filed a coherent
+backlog and produced the fix-ordering composition pattern. Areas 5 and 6
+audit the frontend. Area 5 covers the public site; Area 6 covers the
+admin CMS.
+
+Read these first:
+- docs/pilot/phase-1-audit-plan.md (the audit plan)
+- The "Newly observed for Area 5" subsections of every prior area report,
+  in particular:
+  - Phase 0 report: #7 (no top-level Sentry.ErrorBoundary), #18 (2.6 MB
+    bundle, code-splitting)
+  - Area 1: `is_active` filtering should be confirmed on public endpoints
+  - Area 2: cart persistence (useCart from CartContext), Meta Pixel
+    events firing from multiple pages, Sentry boundaries on Checkout
+    and OrderConfirmation, i18n key shape worth a sanity check after #35
+  - Area 3: educator-access gate is frontend-only with a forgeable
+    base64 token; this is the most consequential Area 5 finding to verify
+- Issue #35 (BookingManage time-slot bug — already filed agent-friendly)
+- Issue #36 (OrderConfirmation doesn't fetch order details)
+
+## Why this area is different
+
+Three differences from the services-layer audits:
+
+1. **Failure modes are user-visible, not data-corruption-shaped.** A
+   broken component renders wrong, breaks the layout, or fails to
+   handle an error. The blast radius is one user's session, not the
+   database.
+
+2. **The cost surface is bundle size, accessibility, and i18n
+   correctness** rather than token spend or vendor outage.
+
+3. **Per-finding stakes are typically lower** because there's no
+   production data to corrupt. The exceptions are the security
+   findings (Area 3 already filed the most consequential one as #61).
+
+The result: Area 5 will likely produce more nice-to-have findings and
+fewer critical ones than the services-layer audits did. That's expected
+and correct, not a quality signal.
+
+## Scope
+
+In-scope files:
+- `frontend/src/` minus the admin routes — Home, Blog, Tours listing,
+  Materiales Educativos, Contact, anything on the public surface
+- i18n setup (`frontend/src/i18n.js` or equivalent), and the
+  `frontend/public/locales/{en,es}/translation.json` files
+- Sentry frontend instrumentation (the public side)
+- Public state management (cart context, any other contexts)
+- The bilingual fallback paths and any language-switching logic
+- The educator-access frontend gate (the forgeable-token mechanism
+  Area 3 flagged)
+- Frontend service modules used by public pages (booking.js, etc.)
+
+Out of scope (covered by Area 6 or already done):
+- Admin routes / admin CMS components (Area 6)
+- TipTap editor and AG Grid (Area 6)
+- Checkout, OrderConfirmation, BookingManage, BookingCancel,
+  BookingRenewPayment — Area 2 already audited the checkout flow.
+  Reference Area 2's findings; don't re-audit.
+- Backend code (Areas 1-4 done)
+
+## What to look for
+
+**Error handling and observability**
+- Top-level `<Sentry.ErrorBoundary>` on `<App>` — Phase 0 flagged its
+  absence as #7. Verify the current state.
+- Per-page error boundaries — Area 2 noted three pages have them
+  (Checkout, OrderConfirmation, Contact). Public pages outside that
+  set: what happens to an uncaught error there?
+- Loading states — every async fetch should have a loading state,
+  an error state, and an empty state. Find the gaps.
+- Network failures — what does a user see if the API is unreachable
+  during a public-site action (browse blog, view tour, submit
+  contact form)?
+
+**i18n correctness**
+- The #35 time-slot bug (BookingManage rendering "Afternoon" for
+  everything) was an i18n-key-mismatch bug. Sanity-check the
+  translation.json files: any other places where the backend returns
+  a value that doesn't match an i18n key the frontend expects?
+- Missing translations — keys present in `en` but not `es`, or vice
+  versa
+- Hardcoded strings in JSX that should be i18n keys
+- Locale-dependent formatting: dates, prices, numbers. Are they
+  formatted with locale-aware APIs (`Intl.DateTimeFormat`,
+  `Intl.NumberFormat`), or with hardcoded `.toLocaleString('en-US')`?
+
+**Public state management**
+- Cart persistence — Area 2 flagged that Checkout's Sentry fallback
+  says "your cart is saved" but the persistence implementation
+  wasn't audited. Find it (CartContext, localStorage, sessionStorage,
+  something else) and verify the claim.
+- Auth state on the public side — what does the public site know
+  about whether the user is logged in? Anything? If yes, how is that
+  state managed and where is it stored?
+- Race conditions on async state — a user clicking twice on a slow
+  action, switching languages mid-load, navigating away mid-fetch
+
+**Security on the public side**
+- The educator-access gate (Area 3's frontend-only base64 token).
+  Confirm what the frontend currently does to gate educator routes,
+  and what an attacker would see if they bypass the gate. Area 3
+  filed the *backend* fix (#61, gating `/api/v1/public-media/*`);
+  what's the frontend story on the same surface?
+- XSS surfaces — anywhere the public site renders user-controlled
+  HTML (markdown rendering, blog content, etc.). React escapes by
+  default; the risk is `dangerouslySetInnerHTML` or third-party
+  components that don't escape.
+- Meta Pixel and analytics — Area 2 noted the OrderConfirmation
+  Purchase event fires with `value: 0`. Other pixel events on the
+  public site: are values correct? Should they fire in development
+  environments? Is the Pixel ID hardcoded or env-driven?
+- Open redirects — any `window.location` or `<a href>` that takes
+  user-controllable input
+
+**Performance and bundle**
+- #18 (2.6 MB bundle) is filed. Verify it's still the right size
+  and identify the biggest single contributors. Suggested fixes:
+  code splitting at the route level is the lowest-effort high-impact
+  change.
+- React rendering issues: components that re-render unnecessarily,
+  missing keys on lists, expensive computations not memoized
+- Image handling: are images lazy-loaded, properly sized, served
+  from a CDN?
+
+**Accessibility (bounded pass)**
+- Semantic HTML on key landing pages (Home, Blog list, Tour
+  listing). Quick scan for: missing alt text on images, missing
+  form labels, headings that skip levels.
+- Keyboard navigation on the cart and contact form
+- Color contrast on critical CTAs (don't audit the whole design
+  system — flag any obvious failures)
+
+This is a bounded pass, not a full accessibility audit. If the site
+is significantly inaccessible, file one issue capturing the pattern
+rather than enumerating dozens of small ones.
+
+**Things from earlier areas to verify**
+- Area 1: `is_active` flag on Tour, Zone, Hotel, Attraction,
+  AdminEmail. Public-API endpoints should filter on this. Verify by
+  watching what the public site requests and what it gets back.
+- Area 2: cart persistence implementation (see above)
+- Area 3: educator-access frontend gate (see above)
+
+## Working style
+
+- **Batch-and-confirm** as in all previous sessions.
+- **Severity calibration:** A finding that exposes user data or
+  bypasses access control is critical. A finding that produces broken
+  UX on critical paths (checkout, contact, booking) is moderate.
+  Cosmetic or convention-drift findings are nice-to-have. Performance
+  findings are moderate if they materially affect load time, nice-to-
+  have otherwise.
+- **Agent-friendly is more available here than in the services layer.**
+  Cosmetic CSS/JSX cleanup, hardcoded string → i18n key migrations,
+  adding missing alt text, route-level code-splitting — these are
+  typically agent-friendly. Cross-cutting state refactors and security
+  fixes are not.
+- **Stop-the-line:** Less likely on the public side than in services.
+  Triggers: an open redirect that takes user input, an XSS vector
+  reachable by public users, a data-leak in a public API response
+  rendered by the site (e.g. a tour endpoint returning admin-only
+  fields), or anything that exposes credentials/tokens client-side.
+- **No prod data access this session.** Frontend audits don't need
+  it — the failure modes are visible in the code or by loading the
+  site in a browser.
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-5-report.md`. Same shape as previous
+reports.
+
+**Fix-ordering section:** Yes, include one for the frontend public
+site. The composition pattern is established; this is the third
+instance. Pre-existing issues that touch the frontend: #7
+(ErrorBoundary), #18 (bundle), #35 (time-slot), #36 (order details),
+#43 (magic-link URL tokens — relevant to BookingManage), #47 (Meta
+Pixel value), #61 (educator access — Area 3 already filed). Pull
+these in.
+
+**"Toward a global fix ordering" continuation:** The 4b-2 report
+established the bridge format. Add a short section here noting which
+of Area 5's findings interact with the backend orderings (probably
+the educator-access ones, the i18n / time-slot cluster, the Meta
+Pixel / order-details cluster). This is the third data point for
+the Phase 1 final report's global synthesis.
+
+## Scope estimate
+
+Smaller than the services-layer sessions. Expect 1.5-2 hours and
+6-10 issues filed. The exact count depends on how much of the
+public site is in good shape — if i18n is clean, accessibility is
+decent, and the cart persistence works, the count is on the low
+end. If there are systemic issues, it's higher.
+
+If you're approaching 15+ findings, you've probably drifted into
+admin (Area 6) or expanded scope into the checkout flow (Area 2
+done). Stop and re-scope.
+
+Begin by:
+1. Reading the inputs above, especially Area 3's educator-access
+   finding (#61) and Area 2's frontend observations
+2. Mapping the public-site route structure (a quick `ls` of
+   `frontend/src/pages/` or wherever the public routes live, plus
+   the router config that wires them up)
+3. Identifying the audit walk order — probably: error/loading/empty
+   states first (foundational), then i18n + state management
+   (highest-finding-density), then security (highest-stakes), then
+   performance + accessibility (bounded pass)
+4. Proposing the session structure
+
+Wait for my approval on the route map and walk order before
+starting the per-page audit.
+
+---
+
+We're starting Phase 1 Part B Area 6: Frontend admin CMS.
+
+This is the final Phase 1 audit area. After this, the next session is the
+Phase 1 synthesis report.
+
+Read these first:
+- docs/pilot/phase-1-area-5-report.md, especially the "Newly observed for
+  Area 6" subsection — Area 5 mapped the admin surface and left specific
+  pointers (12 admin pages, services/admin.js at 26 KB, components/admin/*
+  including TipTap RichTextEditor and AG Grid renderers, AdminAuthContext,
+  AdminLayout)
+- docs/pilot/phase-1-area-3-report.md — admin authentication and the
+  admin route protection model live here
+- Issue #18 (2.6 MB bundle) — Area 5 confirmed this is largely admin code
+  shipping to public visitors; #18 is shared between Area 5 and Area 6
+- Issue #57 (admin tokens in URL query strings) — Area 3's finding that
+  may have frontend admin implications
+- Issue #58 (no admin route protection beyond client checks) — same
+- The "Newly observed for Area 5 / Area 6" subsections of earlier reports
+
+## Why this area matters
+
+The admin CMS is the operator's daily tool. Diego (and you) drive every
+piece of content through it. Bugs here cost productivity rather than
+user trust, but the blast radius per finding can be high because admin
+actions touch production data directly.
+
+Three differences from the public-site audit (Area 5):
+
+1. **User population is bounded — Diego plus you.** Single-digit. That
+   changes the cost-benefit on every finding. A papercut a public user
+   hits once is a real issue; a papercut Diego hits 50 times a day is
+   urgent. A papercut Diego hits once a year and works around is not.
+
+2. **Failure modes shift toward "operator can't do their job" rather
+   than "user sees broken UI."** Stuck states, mysterious errors, lost
+   work in editors, mis-saved drafts.
+
+3. **Security is internal but still consequential.** Admin actions
+   touch production. An admin route that doesn't actually require
+   admin (Area 3 #58 territory) or a frontend that loses unsaved
+   editor state has real cost.
+
+## Scope
+
+In-scope files:
+- `frontend/src/pages/admin/*` (12 pages per Area 5)
+- `frontend/src/components/admin/*` (TipTap RichTextEditor, AG Grid
+  renderers, MediaPickerModal, anything admin-specific)
+- `frontend/src/services/admin.js` (the 26 KB service module Area 5
+  didn't open)
+- `frontend/src/contexts/AdminAuthContext` and `AdminLayout`
+- Any admin-specific Pydantic schemas only used by these pages
+- The interaction surface between admin frontend and the backend
+  admin routes (cross-reference with Area 3's auth findings)
+
+Out of scope:
+- Public site (Area 5 done)
+- Backend code (Areas 1-4 done)
+- Checkout/booking pages (Area 2 done)
+- The shared layout components Area 5 already covered (AppShell,
+  Navbar, Footer)
+
+## What to look for
+
+**Admin route protection on the frontend**
+- AdminAuthContext: what does it check on mount? What does it do on
+  failure (redirect to login, blank page, error)?
+- Race conditions: does any admin page render sensitive data *before*
+  the auth check resolves? Area 5 flagged this as worth verifying.
+- AdminLayout's gating: is every admin route actually wrapped, or
+  are there routes that bypass it?
+- Logout: does it actually clear all admin state, or just the token?
+  Stale data in memory after logout is a leak.
+
+**TipTap RichTextEditor**
+- Unsaved-changes protection: does navigating away from an edit lose
+  work? Is there a confirmation prompt? An autosave?
+- The HTML output: per Area 5's #111 finding, article content is
+  rendered with `dangerouslySetInnerHTML` without sanitization on
+  the public side. Does TipTap on the admin side produce HTML that
+  reaches the public site unchanged? If yes, the HTML sanitization
+  story has two endpoints: where it's created (here) and where it's
+  rendered (#111, public side).
+- Paste behavior: pasting from Word/Google Docs typically injects
+  garbage HTML/style attributes. Does TipTap clean this, or does it
+  pass through to storage?
+- Image insertion: how does the editor reference images? URLs to DO
+  Spaces? Inline base64? Are there orphan-image risks (image
+  uploaded, then editor never saves)?
+
+**AG Grid usage**
+- AG Grid is the largest admin dependency. How is it configured?
+  Server-side row model, client-side, infinite scroll?
+- Are large grids paginated on the backend or do they fetch the
+  whole table client-side? (The latter scales poorly past a few
+  thousand rows; relevant for blog research and article suggestion
+  lists.)
+- Cell renderers: any that do expensive computation on every render?
+- Sorting and filtering: backend-driven or frontend-only? If
+  frontend-only on a large dataset, that's a UX issue.
+
+**Admin services and state**
+- services/admin.js at 26 KB — what's in it? Look for:
+  - Inconsistent error handling vs the public services (Area 5 #107
+    found educators.js and subscribe.js skip response.ok; verify
+    admin.js doesn't have the same gap or has a different one)
+  - Hardcoded URLs that should be env-driven
+  - Functions that do too much (god functions)
+  - Duplicated logic across functions (paste-mode rather than
+    extract-helper)
+- Admin state management: any global stores (Redux, Zustand, Context)?
+  If state is scattered across many contexts, where does it
+  duplicate?
+
+**Editor and form UX**
+- Long-running operations: research generation, article writing,
+  edu material generation can take minutes. Does the UI show
+  progress? Allow cancellation? Survive a page refresh mid-operation?
+- Optimistic updates: any places where the UI updates immediately
+  on a click and then has to roll back if the backend rejects?
+- Error surfacing: when a backend call fails, does the admin see a
+  specific error message or a generic toast?
+
+**Code splitting (shared with #18)**
+- Area 5 confirmed the production bundle is one 2.65 MB chunk and
+  the admin code is the bulk of that. The admin track owns the
+  code-splitting work. Specifically:
+  - Route-level: every admin route should lazy-load
+  - Component-level: TipTap and AG Grid should both load only when
+    the editor or grid pages mount
+  - The natural split is the public/admin route boundary, which is
+    one PR serving both #18 and any Area 6 admin code-splitting
+    finding
+- Don't file a separate code-splitting issue for admin — annotate
+  #18's scope to reflect the admin track ownership.
+
+**Security on the admin side**
+- Admin tokens in URLs (Area 3 #57): does the frontend pass admin
+  tokens via query string anywhere? Headers preferred.
+- CSRF: does the admin backend require CSRF tokens for state-
+  changing operations, and if so, does the frontend send them?
+- Admin actions that touch production data: any that lack
+  confirmation prompts? "Delete article" without a confirm is a
+  classic operator-error vector.
+- The educator-access cluster (Area 3 #50/#52, Area 5 confirmed
+  cosmetic on frontend): is the admin UI for educator management
+  any better, or does it have the same client-trust shape?
+
+**Things from earlier areas to verify**
+- Area 3 #57 (admin tokens in URL): confirm or refute on the
+  frontend admin side
+- Area 3 #58 (no admin route protection beyond client checks):
+  this is partly a backend finding (Area 3 covered) and partly a
+  frontend question (does the frontend assume the backend will
+  reject unauthorized requests, or does it duplicate the check
+  client-side and trust it?)
+- Area 2 cart persistence pattern: any admin equivalents
+  (draft article persistence, unsaved edit recovery)?
+- Sentry config: Area 5 noted `sendDefaultPii: true` on the
+  frontend. Same configuration covers admin pages. Don't re-file;
+  reference.
+
+## Working style
+
+- **Batch-and-confirm** as before.
+- **Severity calibration:** A bug that loses operator work
+  (unsaved edits, mid-flight pipeline state) is moderate to critical
+  depending on recoverability. A bug that lets non-admin users
+  reach admin pages is critical. UX papercuts the operator hits
+  daily are moderate; rare ones are nice-to-have. The "user
+  population is bounded" framing means frequency matters more than
+  it does on the public side.
+- **Agent-friendly is moderately available.** Cosmetic refactors,
+  hardcoded-string migrations, missing confirmation prompts, single-
+  file fixes are typically agent-friendly. State management
+  changes, editor configuration, route protection refactors are
+  not.
+- **Stop-the-line:** An admin route that's reachable without auth.
+  An XSS vector reachable through admin actions. A path where
+  admin tokens leak (logs, URLs, error pages). An operation that
+  destroys data without confirmation and has no undo.
+- **No prod data access this session.** Same as Area 5 — frontend
+  audits don't need it.
+
+## Fix-ordering section
+
+Yes, include one. This is the fourth (after edu, article, public
+frontend). Same format. The admin-track issues filed in this
+session, plus pre-existing issues that touch the admin frontend:
+
+- #18 (bundle / code-splitting) — admin track owns this
+- #57 (admin tokens in URL) — confirm or refute frontend side
+- #58 (admin route protection) — frontend half of an Area 3 finding
+- Any Area 5 issues that materially affect admin (probably few —
+  Area 5 was scoped to public)
+
+## "Toward a global fix ordering" continuation
+
+The fourth and final bridge section before the Phase 1 synthesis.
+Same format as Area 5's. Identify:
+
+- Where the admin track is independent of other backlogs
+- Where it interacts (the code-splitting work shared with Area 5,
+  the admin-auth work shared with Area 3, the TipTap HTML
+  sanitization story shared with #111 backend-side)
+- Where shared foundations slot in (admin work has no LLM
+  foundation dependency — it's a UI layer — but check whether
+  any admin pages depend on services-layer work that's still in
+  progress)
+
+After this section, the Phase 1 final report has all four bridge
+sections as inputs for the global synthesis.
+
+## End-of-session report
+
+Save as `docs/pilot/phase-1-area-6-report.md`. Same shape as
+previous reports. Required sections:
+
+- Executive summary
+- By-the-numbers
+- What was audited
+- Item-by-item findings
+- Stop-the-line discussion
+- What's filed vs deferred
+- Newly observed (for the Phase 1 synthesis report specifically,
+  not for further audit areas — there are none after this)
+- What surprised me
+- Process notes for the Phase 1 final report
+- Fix ordering for admin frontend
+- Toward a global fix ordering
+
+The "Newly observed" section in this report has a different role
+than the previous ones: it's no longer feeding the next audit; it's
+feeding the synthesis. Specifically capture:
+
+- Cross-cutting findings that haven't been filed as issues but
+  belong in the synthesis report (e.g. the partial-correction
+  pattern, which Area 5 flagged as the fourth instance — a fifth
+  might surface here)
+- Reference documents this audit produces or refines (the admin
+  surface map, any admin-specific failure-mode notes)
+- Things to verify or close out before the synthesis report can
+  be written (e.g. the function-local-import correction Area 4b-2
+  flagged for the module inventory)
+
+## Scope estimate
+
+Bounded but not trivial. Expect 1.5-2 hours and 6-10 issues filed.
+The admin frontend is the largest single contributor to the bundle
+(per Area 5) but most of its complexity is in two third-party
+components (TipTap, AG Grid) that have their own behaviors and
+quirks rather than being deep custom code. The audit walks the
+admin pages, characterizes the editor and grid usage, and files
+specific concerns.
+
+If you're approaching 15+ findings, you've drifted into re-auditing
+public-side code or into territory that's actually backend
+(admin.js makes API calls, but those endpoints' behaviors are
+backend findings, already covered).
+
+Begin by:
+1. Reading the inputs above, especially Area 5's admin-surface
+   notes and Area 3's admin-auth findings
+2. Mapping the admin route structure (12 pages per Area 5; verify
+   the count and list them)
+3. Identifying the audit walk order — probably: AdminAuthContext
+   and route protection first (foundational), then services/admin.js
+   (cross-cutting concerns), then TipTap editor (highest UX stakes),
+   then AG Grid usage (performance + correctness), then per-page
+   surface checks
+4. Proposing the session structure
+
+Wait for my approval on the route map and walk order before
+starting the per-page audit.
+
+---
+
+Stock-take session: produce a current snapshot of the project's GitHub
+issue backlog as the input for the upcoming Phase 1 synthesis report.
+
+This is a small focused session. ~20-30 minutes. No PR. The output is a
+single markdown file with the snapshot, plus a brief synthesis-prep
+observation list.
+
+## Goal
+
+Phase 1 produced 99 filed issues across 11 audit sessions plus inline
+fixes (#21, #31, #49 PR, etc.). Some are closed; most are open. Before
+the synthesis report writes the global fix-ordering, we need an
+accurate current picture of what's actually open, by what dimensions,
+and how it composes.
+
+## What to produce
+
+A single file: `docs/pilot/phase-1-backlog-snapshot.md`
+
+Required sections:
+
+1. **Headline counts.** Total open issues, total closed, plus the closed
+   ones broken out by mechanism (closed-via-PR, closed-as-duplicate,
+   closed-as-wont-fix, etc. — use whatever GitHub tells you).
+
+2. **Open issues by severity.** Counts for `code-quality:critical`,
+   `code-quality:moderate`, `code-quality:nice-to-have`, plus any
+   `bug` or `enhancement` labels that show up. Note any issue without
+   a severity label.
+
+3. **Open issues by agent-friendly status.** Count of `agent-friendly`
+   issues, broken down by severity within that. The agent-friendly
+   moderates and nice-to-haves are the most actionable Phase 2 entry
+   points; the agent-friendly criticals (if any) are interesting.
+
+4. **Open issues by audit area / origin.** Trace each open issue back
+   to its source: Phase 0 backlog (issues #3-#19), Area 1 (data layer
+   — #21-#29), Area 2 (payments — #31-#47), and so on. Use the audit
+   reports as the source of truth for which issue numbers belong to
+   which area. Include "inline / cross-cutting" for anything that
+   doesn't fit a single area.
+
+5. **Closed issues — what got resolved and how.** A short table:
+   issue number, title, how it closed, which session or PR. The
+   purpose is to make the audit's actual progress visible (some
+   issues closed inline during audits, some via dedicated PRs, some
+   may have been duplicates).
+
+6. **The "shared foundation" cluster.** Specifically pull out:
+   - #76 (unified Anthropic wrapper) and its dependent cluster (#77,
+     #78, #68, plus the LLM-quality cleanup issues from edu and
+     article pipelines)
+   - #67 (Composio contract) and its caller-side cluster (#70, #74,
+     plus the 4c catalogue entries)
+   - #50 + #52 + #60 (educator access — backend + frontend)
+   - Any other multi-issue work that the fix-ordering bridges
+     identified
+   These are the items whose ordering matters most for Phase 2+ and
+   whose framing as "clusters not individuals" is part of what the
+   synthesis report will articulate.
+
+7. **The Wave-1 candidates from the four bridge sections.** Per the
+   cumulative bridge sections (4b-2, Area 5, Area 6), global Wave 1
+   has four concurrent tracks: edu critical (#97 → #91 → #90),
+   article critical (#99 + articles 39/40 cleanup), LLM foundation
+   (#76 cluster), frontend safety-net (#7, #106, #110). List the
+   issue numbers and current open/closed status for each.
+
+8. **Synthesis-prep observations.** A short bulleted list (5-10
+   items) of things you notice from compiling this snapshot that
+   the synthesis report should account for. Examples of what fits
+   here:
+   - Severity distribution patterns (e.g. "of 99 issues, only N
+     are critical, suggesting most work is moderate or below")
+   - Agent-friendly distribution patterns (e.g. "frontend issues
+     are ~80% agent-friendly, backend services are ~20%")
+   - Issues that have closed and changed the calculus of others
+     (e.g. "#21 closed inline, which means #3's prerequisite is now
+     met")
+   - Any issue that appears stale or worth re-examining (e.g. filed
+     critical but the area report says it's latent — does the
+     severity still hold?)
+   - Any obvious clustering the audit reports didn't name explicitly
+
+   Don't analyze deeply here — just note what you notice. The
+   synthesis report will do the heavy interpretation.
+
+## How to get the data
+
+Use `gh issue list` with appropriate filters. Some useful invocations:
+
+- `gh issue list --state open --limit 200 --json number,title,labels,
+  state,createdAt,closedAt`
+- `gh issue list --state closed --limit 200 --json number,title,labels,
+  closedAt,closedBy`
+- `gh issue list --label "agent-friendly" --state open --json number,
+  title,labels`
+
+The audit reports themselves are the source of truth for which issue
+belongs to which area — read them to map issue numbers back to areas.
+The mapping isn't always obvious from issue titles.
+
+## What this is NOT
+
+- Not a fix-ordering analysis (that's the synthesis report's job)
+- Not an interpretation or recommendation (also synthesis)
+- Not a re-audit of any issue
+- Not opening or closing issues, not editing them, not commenting
+  on them
+- Not analysis of which issues are most important
+
+This is just an accurate, well-organized snapshot of the current state.
+
+## Working style
+
+- No batch-and-confirm — this is read-only data aggregation
+- No prod queries needed
+- If you find issues that lack expected labels (no severity, or
+  filed under an area that doesn't have a report), surface them in
+  section 8 rather than silently re-classifying
+- If two issue numbers look like they refer to the same underlying
+  work, note it in section 8 — don't merge or close anything
+- Cross-check the audit reports' "closed inline" claims against the
+  GitHub state — if a report said something closed but GitHub still
+  shows it open, that's a discrepancy worth noting
+
+## Scope estimate
+
+20-30 minutes. The aggregation itself is mechanical. The trickier
+part is mapping issue numbers back to audit areas using the reports
+as ground truth, and noticing the synthesis-prep observations.
+
+Begin by running the gh queries and confirming the total open vs
+closed counts match my mental model (~95 open, ~5 closed, give or
+take). If the counts are significantly different (e.g. 80 open, 20
+closed), flag that immediately — it means something closed that I
+don't remember closing, and we should figure out what before
+proceeding.
+
+Save the snapshot to `docs/pilot/phase-1-backlog-snapshot.md`. No
+PR — the synthesis session will land the snapshot along with
+whatever the synthesis report becomes.
+

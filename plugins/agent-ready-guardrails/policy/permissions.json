@@ -1,0 +1,57 @@
+{
+  "$comment": "agent-ready-guardrails canonical permission policy. Installed into ~/.claude/settings.json (or /etc/claude-code/managed-settings.json) by scripts/install-policy.sh. RULE OF THUMB: a user-level deny can NEVER be overridden by a project-level allow, so deny is reserved for the catastrophic; anything legitimate-locally-but-dangerous-in-prod goes to ask. This is a codebase-agnostic BASELINE. Extend it per your stack (see README.md 'Extending the baseline'): add schema-migration/deploy commands to `ask`; add your providers' token prefixes (sntrys_, xoxb-, ATATT, ...) and any extra credential stores (~/.config/<org>/) to `deny`; put a repo's own prod-host fences in that repo's .claude/settings.json.",
+  "permissions": {
+    "allow": [
+      "Bash(docker build:*)",
+      "Bash(docker build *)",
+      "Edit(CLAUDE.md)",
+      "Edit(.claude/**)"
+    ],
+    "ask": [
+      "Bash(git push * main*)",
+      "Bash(git push * master*)",
+      "Bash(git push origin main*)",
+      "Bash(git push origin master*)",
+      "Bash(docker push *)",
+      "Bash(alembic upgrade*)",
+      "Bash(alembic downgrade*)",
+      "Bash(alembic stamp*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push --force-with-lease*)",
+      "Bash(git reset --hard origin/*)",
+      "Bash(git reset --hard HEAD~*)",
+      "Bash(git filter-branch*)",
+      "Bash(git rebase -i*)",
+      "Bash(git clean -fd*)",
+      "Bash(git clean -fx*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(gh pr merge*)",
+      "Bash(*AKIA*)",
+      "Bash(*ghp_*)",
+      "Bash(*github_pat_*)",
+      "Read(~/.aws/**)",
+      "Edit(~/.aws/**)",
+      "Write(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Edit(~/.ssh/**)",
+      "Write(~/.ssh/**)",
+      "Read(**/secrets/**)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Edit(**/secrets/**)",
+      "Edit(**/credentials*)",
+      "Write(.env)",
+      "Write(.env.*)",
+      "Write(**/.env)",
+      "Write(**/.env.*)",
+      "Write(**/secrets/**)",
+      "Write(**/credentials*)"
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+# Agent Ready — CI stub: Node (lint + build/test) + secret scan
+#
+# Required-check contexts this workflow exposes (job `name:` values):
+#   - "Secret scan"
+#   - "Test"
+#
+# IMPORTANT: a job's `name:` IS its branch-protection required-check key.
+# Renaming a job strands the protected branch's required check forever.
+#
+# Adjust the marked spots (Node version, working directory, scripts) and commit.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION=8.21.2
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+      - name: Scan working tree
+        run: gitleaks detect --source . --no-git --redact --verbose --no-banner
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    # If your app lives in a subdirectory (e.g. frontend/), set it here:
+    # defaults:
+    #   run:
+    #     working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22" # <-- adjust to your project
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Adjust to whatever your package.json defines. The `--if-present` guard
+      # lets the stub work before you've added every script.
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Test
+        run: npm test --if-present

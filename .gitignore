@@ -1,0 +1,14 @@
+# OS / editor
+.DS_Store
+*.swp
+Thumbs.db
+
+# Claude Code local settings (per-user, never shared)
+.claude/settings.local.json
+
+# Local-only instrumentation logs that the methodology generates in TARGET repos.
+# Listed here so the pattern is documented even though it is produced elsewhere.
+agent-friendly-outcomes.md
+
+# Logs
+*.log

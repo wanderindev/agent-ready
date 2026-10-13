@@ -1,0 +1,18 @@
+# Pilot Prompts Index
+
+One file per `---`-delimited prompt block in `../prompts.txt`. Numbering matches the order the prompts appear in that file (which is also the chronological session order). The Area 2 and Area 3 prompts were originally a single block without a `---` separator; they've been split into `05a` and `05b`.
+
+- [01-phase-0-baseline.md](01-phase-0-baseline.md) — Kicked off Phase 0: tool/MCP audit, CLAUDE.md audit, build/test verification, Sentry check, GitHub hygiene, and label/template backlog readiness. Maps to `phase-0-report.md`.
+- [02-phase-1-prep-labels-templates-criteria.md](02-phase-1-prep-labels-templates-criteria.md) — Kicked off the Phase 1 prep PR: create 4 missing labels, 4 GitHub issue templates, the agent-friendly criteria doc, and a Phase 1 README. Maps to `agent-friendly-criteria.md` and `phase-1-readme.md`.
+- [03-phase-1-part-a-intake-and-audit-plan.md](03-phase-1-part-a-intake-and-audit-plan.md) — Kicked off Phase 1 Part A: convert the Phase 0 deferred backlog into properly-structured GitHub issues, then propose the 4-7 area audit plan for Part B. Maps to `phase-1-audit-plan.md`.
+- [04-area-1-data-layer.md](04-area-1-data-layer.md) — Kicked off Area 1: data layer / SQLAlchemy models / alembic audit. Maps to `phase-1-area-1-report.md`.
+- [05a-area-2-payments.md](05a-area-2-payments.md) — Kicked off Area 2: payments, bookings, orders & PayPal webhook forensic + audit. Maps to `phase-1-area-2-report.md`.
+- [05b-area-3-auth.md](05b-area-3-auth.md) — Kicked off Area 3: auth & educator access gate audit. Maps to `phase-1-area-3-report.md`.
+- [06-phase-1.5-html-injection-fix.md](06-phase-1.5-html-injection-fix.md) — Kicked off the Phase 1.5 detour: a single-PR fix for issue #31 (HTML injection in notification emails via Jinja2 migration). Inline stop-the-line fix that interrupted the Area 2 → Area 3 sequence. No standalone report — referenced in Area 2 report and the #31 PR.
+- [07-area-4a-cross-cutting-services.md](07-area-4a-cross-cutting-services.md) — Kicked off Area 4a: cross-cutting services audit (LLM/translation/email/storage wrappers). Produced the service surface map and vendor failure-mode summary. Maps to `phase-1-area-4a-report.md`.
+- [08-area-4c-swallowed-exceptions-sweep.md](08-area-4c-swallowed-exceptions-sweep.md) — Kicked off Area 4c: systematic swallowed-exceptions sweep across all 20 service modules. Output was the catalogue comment on issue #8. Maps to `phase-1-area-4c-report.md`. (Note: 4c was scheduled before 4b per the audit plan revision — see Area 4a report.)
+- [09-area-4b-1-edu-pipeline.md](09-area-4b-1-edu-pipeline.md) — Kicked off Area 4b-1: edu pipeline audit (research → study guides → slides → watermarking → media library). Introduced the fix-ordering output format. Maps to `phase-1-area-4b-1-report.md`.
+- [10-area-4b-2-article-pipeline.md](10-area-4b-2-article-pipeline.md) — Kicked off Area 4b-2: article pipeline audit (suggestions → research → article writing → translation → publication). Added the "Toward a global fix ordering" bridge section. Maps to `phase-1-area-4b-2-report.md`.
+- [11-area-5-frontend-public.md](11-area-5-frontend-public.md) — Kicked off Area 5: frontend public site audit. Maps to `phase-1-area-5-report.md`.
+- [12-area-6-frontend-admin-cms.md](12-area-6-frontend-admin-cms.md) — Kicked off Area 6: frontend admin CMS audit (TipTap, AG Grid, AdminAuthContext, services/admin.js). Final Phase 1 audit. Maps to `phase-1-area-6-report.md`.
+- [13-phase-1-backlog-snapshot.md](13-phase-1-backlog-snapshot.md) — Kicked off the stock-take session that produced the backlog snapshot as input for the Phase 1 synthesis report. Maps to `phase-1-backlog-snapshot.md`.

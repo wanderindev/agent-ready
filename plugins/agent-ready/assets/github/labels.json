@@ -1,0 +1,27 @@
+[
+  {
+    "name": "code-quality:critical",
+    "color": "B60205",
+    "description": "Code quality issue with significant risk (security, data integrity, prod stability)"
+  },
+  {
+    "name": "code-quality:moderate",
+    "color": "D93F0B",
+    "description": "Code quality issue worth addressing but not urgent (tech debt, refactors)"
+  },
+  {
+    "name": "code-quality:nice-to-have",
+    "color": "FBCA04",
+    "description": "Cosmetic or low-impact code quality improvement"
+  },
+  {
+    "name": "agent-friendly",
+    "color": "0E8A16",
+    "description": "Scoped for autonomous agent execution — see the agent-friendly criteria doc"
+  },
+  {
+    "name": "epic",
+    "color": "5319E7",
+    "description": "Tracks a multi-issue body of work"
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "agent-ready",
+  "owner": {
+    "name": "Javier Feliu"
+  },
+  "description": "The agent-ready methodology: audit an existing codebase, make it safe and clear, then resolve the backlog with autonomous agents on the tractable subset and human pairing on the rest.",
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "agent-ready",
+      "source": "./agent-ready",
+      "description": "Skills that bootstrap a repo for agent work, install the methodology docs, scaffold area audits, and resolve issues autonomously or in pair-mode.",
+      "license": "MIT",
+      "keywords": ["audit", "code-quality", "autonomous-agents", "methodology", "github-issues"]
+    },
+    {
+      "name": "agent-ready-guardrails",
+      "source": "./agent-ready-guardrails",
+      "description": "A safe deny/ask/allow baseline for handing a repo to agents: destructive git/filesystem actions denied, production access gated behind approval, secrets protected. Ships a PreToolUse guard that blocks the catastrophic subset on enable.",
+      "license": "MIT",
+      "keywords": ["guardrails", "safety", "permissions", "hooks", "agent-ready"]
+    }
+  ]
+}

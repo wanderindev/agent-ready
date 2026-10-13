@@ -1,0 +1,30 @@
+ Summary of what shipped
+  
+  Four files, ~450 insertions:
+  
+  ┌────────────────┬───────────────────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────────────┐
+  │   Touchpoint   │                                 File                                  │                                       Role                                       │
+  ├────────────────┼───────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤
+  │ Document       │ docs/methodology/cross-cutting-checklist.md (new)                     │ Authoritative; 5 pattern items + the orchestrator's-prior framing item. Each     │
+  │                │                                                                       │ carries hypothesis framing + falsification test + PIC-WORKED-EXAMPLE blocks.     │
+  ├────────────────┼───────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤
+  │                │                                                                       │ Skill surfaces checklist in Slot 7, refuses to mark area complete at end-of-area │
+  │ Runtime gate   │ .claude/skills/area-audit/references/cross-cutting-checklist.md (new) │  until all 7 dispositions recorded. Description extended to catch end-of-area    │
+  │                │  + SKILL.md edits                                                     │ phrasings. New "Closing gate" section near the end of SKILL.md summarizes both   │
+  │                │                                                                       │ gates.                                                                           │
+  ├────────────────┼───────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤
+  │ Persistence    │ references/report-shape.md sub-section                                │ Report structurally incomplete without the Cross-cutting checklist dispositions  │
+  │ gate           │                                                                       │ sub-section, placed alongside the override register.                             │
+  ├────────────────┼───────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤
+  │                │                                                                       │ Names "prefer gates to guidelines" with the two existing instances (Artifact 1   │
+  │ Meta-principle │ conventions.md addition                                               │ fill-gate; Artifact 4 double enforcement) and the test for when a gate is        │
+  │                │                                                                       │ buildable ("is a skill in the loop when this discipline needs to apply?").       │
+  └────────────────┴───────────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────┘
+
+  The orchestrator's-prior item is treated as the framing the other five sit inside, not as a sixth peer — it gets a separate priors-stated/held/broke note in the report, not a
+  fired/absent/N-A disposition. Per the synthesis caution, flattening it would lose the experimenter-vs-reviewer framing §8 worked to elevate.
+  
+  The disposition vocabulary (fired / checked, absent / N/A) appears identically across all three files where it's used. The absent-vs-N/A distinction is restated in each
+  location because the value of the absent disposition (prevalence data the synthesis needs) is exactly what's most likely to be collapsed under time pressure.
+
+  §8 framing survived contact with implementation — no checklist item turned out unbuildable or wrong-shaped. Branch protection respected; the PR awaits your review.

@@ -1,6 +1,6 @@
 # Auditing a codebase you can't trust yet
 
-Every side project that survives long enough arrives at the same place. It works. It is deployed. Real people use it. And you have stopped touching it, because the parts you understand are tangled up with parts you wrote at 2am eight months ago and no longer remember, and you cannot tell by looking which is which. The codebase is not bad, exactly. It is unaudited. The uncertainty is small and everywhere, and small-and-everywhere is the hardest kind to clear.
+Every codebase that grows fast under one developer arrives at the same place. It works. It is deployed. Real people use it. And you have stopped touching it, because the parts you understand are tangled up with parts you wrote at 2am eight months ago and no longer remember, and you cannot tell by looking which is which. The codebase is not bad, exactly. It is unaudited. The uncertainty is small and everywhere, and small-and-everywhere is the hardest kind to clear.
 
 That is the state Agent Ready starts from, and it is why the first phase is not "write code" but "find out what is actually here."
 

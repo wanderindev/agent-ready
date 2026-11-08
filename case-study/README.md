@@ -2,8 +2,8 @@
 
 This is the worked example the [Agent Ready](../README.md) methodology was
 extracted from: the **Panama In Context (PIC)** audit-to-autonomy run
-(March–June 2026), which took a stalled, vibe-coded bilingual content-and-booking
-site to **138 issues filed and closed, 165 PRs merged, zero breakages of `main`**.
+(March–June 2026), which took the stalled, vibe-coded production platform of a Panama tour and
+field-trip business to **138 issues filed and closed, 165 PRs merged, zero breakages of `main`**.
 
 Everything here keeps PIC's **real numbers and names** — it is the proof and the
 calibration anchor. The codebase-agnostic abstraction lives under

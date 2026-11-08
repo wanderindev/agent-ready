@@ -25,8 +25,8 @@ floor (destructive actions denied, production gated, secrets protected),
 **`setup`** wires the whole thing up in one idempotent command, and **`report`**
 computes how well the loop is actually working.
 
-It was extracted from a real audit-to-autonomy run on a deployed bilingual
-content-and-booking site, where the methodology took the project from a
+It was extracted from a real audit-to-autonomy run on the production
+content-and-booking platform of a Panama tour business, where the methodology took the project from a
 stalled, vibe-coded state to **138 issues filed and closed, 165 PRs merged,
 zero breakages of `main`**. That run is documented as the [case study](case-study/README.md).
 
@@ -42,7 +42,7 @@ specification.
 
 The surprising lesson from the pilot was that the biggest win wasn't autonomy at
 all — it was **clarity**. A well-specified issue backlog cured the stop-start
-"blank page" problem that quietly kills side projects, and made every session
+"blank page" problem that quietly stalls solo-maintained codebases, and made every session
 productive from minute one. The full, honest account is in the
 [retrospective](case-study/retrospective.md).
 

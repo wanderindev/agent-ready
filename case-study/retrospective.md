@@ -1,4 +1,4 @@
-# Retrospective: turning a vibe-coded side project into a codebase I can build on
+# Retrospective: turning a vibe-coded production codebase into one I can build on
 
 **Date:** 2026-06-06
 **Author:** Javier Feliu
@@ -22,15 +22,16 @@ I'd been watching sessions from a conference in May. A recurring theme was
 running Claude autonomously on managed infrastructure — agents picking up
 issues and fixing them on their own. It was a compelling pitch, and I was
 skeptical of it. Not of the demos, but of whether it mapped onto the codebases
-I actually live in: personal, mostly-vibe-coded side projects, or large work
+I actually live in: small production apps I build and run alone, mostly
+vibe-coded, or large work
 codebases with years of legacy written by tens of developers who came and went,
 unevenly tested, inconsistently styled. Autonomous agents finding and fixing
 issues on *that* felt more like a pipe dream than something I could use now.
 
-PIC is the personal end of that spectrum. It's a real, deployed, bilingual
-content-and-booking site — React 19 + Vite, FastAPI + Postgres, payments, email
-pipelines, an admin CMS — but it was built the way side projects get built: in
-weekend bursts, over months, by one person.
+PIC is the small-business end of that spectrum. It's the real, deployed,
+bilingual content-and-booking platform of a Panama tour and field-trip business — React 19 + Vite, FastAPI + Postgres, payments, email
+pipelines, an admin CMS — but it was built the way solo codebases get built:
+in weekend bursts, over months, by one person.
 
 So I ran the experiment. Not "point an agent at the repo and hope," but: do a
 full audit first, see what it surfaces, and decide from the evidence whether
@@ -71,12 +72,12 @@ GitHub issues — with labels, severities, and full descriptions — completely
 fixed the continuity problem. When I sat down, I didn't have to reconstruct my
 own context or decide what mattered. I looked at the backlog, picked a cluster
 of related issues, and was productive from the first minute. The "blank page"
-blocker that writers talk about — the thing that quietly kills side projects
-between sessions — was just *gone*. And because starting was frictionless,
+blocker that writers talk about — the thing that quietly stalls
+solo-maintained codebases between sessions — was just *gone*. And because starting was frictionless,
 I came back more often. The clarity was motivating in a way I didn't predict.
 
 That's the part I'd tell another solo developer first. The agents are great.
-But the thing that turned a stalled side project into one I shipped 138 fixes
+But the thing that turned a stalled codebase into one I shipped 138 fixes
 into was writing the work down clearly enough that future-me could start cold.
 
 ### Why autonomy was the unsurprising part
@@ -246,5 +247,5 @@ file as the fix targets), which made tight briefs easier than they might be
 elsewhere. The methodology is *promising*, calibrated against this codebase's
 specific shape — not *proven* across codebases. The next repositories are the
 test plan, not the confirmation. What I can say without hedging: on this
-codebase, it turned a stalled side project into one I can safely build on, and
+codebase, it turned a stalled codebase into one I can safely build on, and
 it never broke once.
